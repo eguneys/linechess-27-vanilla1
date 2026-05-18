@@ -1,0 +1,64 @@
+@use 'sass:color';
+@use 'sass:map';
+
+$spacing: 0.25rem;
+$spacing_m: 0.5rem;
+
+$px: 1px;
+$s0: $spacing * 0.5;
+$s1: $spacing;
+$s2: $spacing * 2;
+$s3: $spacing * 3;
+$s4: $spacing * 4;
+$m0: $spacing_m * 0.5;
+$m1: $spacing_m * 1;
+$m2: $spacing_m * 2;
+$m3: $spacing_m * 3;
+$m4: $spacing_m * 4;
+
+$white0: white;
+$white1: color.adjust($white0, $lightness: -10%);
+$white2: color.adjust($white0, $lightness: -20%);
+$white3: color.adjust($white0, $lightness: -30%);
+$black0: black;
+$black05: color.adjust($black0, $lightness:  5%);
+$black1: color.adjust($black0,  $lightness: 10%);
+$black2: color.adjust($black0,  $lightness: 20%);
+$black3: color.adjust($black0,  $lightness: 30%);
+$cyan0: cyan;
+$cyan-3: color.adjust($cyan0, $lightness: 30%);
+$cyan-2: color.adjust($cyan0, $lightness: 20%);
+$cyan-1: color.adjust($cyan0, $lightness: 10%);
+$cyan-05: color.adjust($cyan0,$lightness:  5%);
+$cyan05: color.adjust($cyan0, $lightness: -5%);
+$cyan1: color.adjust($cyan0,  $lightness: -10%);
+$cyan2: color.adjust($cyan0,  $lightness: -20%);
+$cyan3: color.adjust($cyan0,  $lightness: -30%);
+$gray3: color.adjust($cyan3, $hue: 10, $whiteness: -25%);
+
+
+@mixin rounded {
+    border-radius: $s0;
+    border: 1px solid $black2;
+}
+
+$breakpoints: (
+    "sm": 576px,
+    "md": 768px,
+    "lg": 992px,
+    "xl": 1200px
+);
+
+@mixin respond-to($breakpoint) {
+
+    // Check if the key exists in the map
+    @if map.has-key($breakpoints, $breakpoint) {
+        @media (min-width: map.get($breakpoints, $breakpoint)) {
+            @content;
+        }
+    }
+
+    @else {
+        @warn "Unknown breakpoint: #{$breakpoint}.";
+    }
+}
