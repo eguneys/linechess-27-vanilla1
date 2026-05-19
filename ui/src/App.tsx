@@ -1,14 +1,14 @@
 import { lazy, type JSX } from 'solid-js'
 import './App.scss'
 import { LinechessProvider } from './state/State'
-import { Route, Router } from '@solidjs/router'
+import { A, Route, Router } from '@solidjs/router'
 
 const Main = lazy(() => import('./routes/Main'))
 
 function Header() {
   return (<>
     <header>
-      <div class='title'><div class='logo'></div> Line Chess</div>
+      <A href="/"><div class='title'><div class='logo'></div> Line Chess</div></A>
     </header>
   </>)
 }

@@ -103,7 +103,7 @@ main {
                 cursor: pointer;
 
                 padding: variables.$s1 variables.$s2;
-                background: variables.$black1;
+                background: variables.$black075;
 
 
                 &:not(last-child) {
@@ -111,11 +111,11 @@ main {
                 }
 
                 &:nth-child(even) {
-                    background: variables.$black15;
+                    background: variables.$black1;
                 }
 
                 &:hover {
-                    background: variables.$black2;
+                    background: variables.$black16;
                 }
 
                 transition: background .2s;
@@ -251,11 +251,22 @@ main {
                 .content {
                     overflow-y: auto;
                     height: 12em;
+
+
+                    @include variables.respond-to("md") {
+                        height: 15em;
+                    }
+
+                    @include variables.respond-to("lg") {
+                        height: 20em;
+                    }
                 }
             }
 
 
             .opening-list {
+
+
                 .header {
                     padding: variables.$s2;
                     display: flex;
@@ -265,15 +276,36 @@ main {
                     color: variables.$cyan-1;
                     background: variables.$cyan5;
                 }
+
+                .content {
+                    .opening {
+                        cursor: pointer;
+                        padding: variables.$s2;
+
+                        color: variables.$cyan05;
+
+                        &.active {
+                            background: variables.$cyan-2;
+                            color: variables.$cyan0;
+                        }
+
+                        &:hover {
+                            background: variables.$cyan5;
+                            color: variables.$cyan-05;
+                        }
+                    }
+                }
             }
 
             .opening-lines {
+
                 flex: 1;
                 display: flex;
                 flex-flow: column;
                 justify-content: center;
 
                 .no-content {
+                    padding: 1em;
                     display: flex;
                     flex-flow: column;
 
