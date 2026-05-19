@@ -7,6 +7,14 @@ body {
     --main-max-width: 1300px;
 }
 
+a {
+    color: variables.$cyan15;
+
+    &:visited {
+        color: variables.$cyan3;
+    }
+}
+
 .main-wrapper {
     display: grid;
 
@@ -33,6 +41,8 @@ body {
                 letter-spacing: -0.025em;
                 color: variables.$cyan0;
                 text-transform: uppercase;
+                font-size: variables.$m25;
+                line-height: variables.$m35;
 
 
                 .logo {
@@ -41,7 +51,9 @@ body {
                     background: variables.$cyan2;
                     border-radius: variables.$s0;
                     border: variables.$px solid variables.$white2;
+
                     box-shadow: 0px 0px 3px 1px variables.$cyan0;
+                    animation: logo-flow 3s infinite;
                 }
             }
 
@@ -49,54 +61,6 @@ body {
         border-bottom: variables.$s0 solid variables.$black3;
     }
 }
-
-main {
-
-    display: grid;
-
-    grid-template-areas: 'tabs . .'
-                         'content content content';
-    
-    .dashboard-tabs {
-        grid-area: tabs;
-    }
-
-    .dashboard-content {
-        grid-area: content;
-    }
-}
-
-main {
-
-    .dashboard-tabs {
-
-        @include variables.rounded;
-        margin: variables.$m3;
-        justify-self: start;
-        display: flex;
-        overflow: hidden;
-
-        .tab {
-            transition: color .2s;
-            cursor: pointer;
-            color: variables.$white2;
-            background: variables.$black1;
-            padding: variables.$s1;
-
-            text-transform: uppercase;
-
-            &:hover {
-                color: variables.$white1;
-            }
-
-            &.active {
-                color: variables.$white0;
-                background: variables.$black05;
-            }
-        }
-    }
-}
-
 
 main {
     button {
@@ -117,55 +81,12 @@ main {
     }
 }
 
-
-main {
-    .dc-dashboard {
-        display: grid;
-
-        grid-template-areas: 'info'
-                             'list';
-
-        gap: variables.$s3;
-
-        .info-action {
-            grid-area: info;
-        }
-
-        .matches-list {
-            grid-area: list;
-        }
+@keyframes logo-flow {
+    0%, 100% {
+        opacity: 1;
     }
-
-
-    .dc-dashboard {
-        .info-action {
-            padding-inline: variables.$s2;
-
-            display: flex;
-            flex-flow: column;
-            justify-content: space-between;
-
-
-            @include variables.respond-to("sm") {
-                flex-flow: row;
-            }
-
-            p {
-                color: variables.$cyan2;
-            }
-
-            .import-pgn-btn {
-                align-self: end;
-                padding: variables.$s1 variables.$s2;
-            }
-        }
-
-
-        .matches-list {
-            @include variables.rounded;
-            color: variables.$cyan2;
-
-            background: variables.$black1;
-        }
+    50% {
+        opacity: .82;
+        transform: scale(1.1) rotate(6deg);
     }
 }

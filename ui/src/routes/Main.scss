@@ -1,0 +1,209 @@
+@use '../variables';
+
+
+main {
+
+    display: grid;
+
+    grid-template-areas: 'tabs . .'
+                         'content content content';
+    
+    .dashboard-tabs {
+        grid-area: tabs;
+    }
+
+    .dashboard-content {
+        grid-area: content;
+    }
+}
+
+main {
+
+    .dashboard-tabs {
+
+        @include variables.rounded;
+        margin: variables.$m3;
+        justify-self: start;
+        display: flex;
+        overflow: hidden;
+
+        .tab {
+            transition: color .2s;
+            cursor: pointer;
+            color: variables.$white2;
+            background: variables.$black1;
+            padding: variables.$s1;
+
+            text-transform: uppercase;
+
+            &:hover {
+                color: variables.$white1;
+            }
+
+            &.active {
+                color: variables.$white0;
+                background: variables.$black05;
+            }
+        }
+    }
+}
+
+
+
+main {
+    .dc-dashboard {
+        display: grid;
+
+        grid-template-areas: 'info'
+                             'list';
+
+        gap: variables.$s3;
+
+        .info-action {
+            grid-area: info;
+        }
+
+        .matches-list {
+            grid-area: list;
+        }
+    }
+
+
+    .dc-dashboard {
+        .info-action {
+            padding-inline: variables.$s2;
+
+            display: flex;
+            flex-flow: column;
+            justify-content: space-between;
+
+
+            @include variables.respond-to("sm") {
+                flex-flow: row;
+            }
+
+            p {
+                color: variables.$cyan2;
+            }
+
+            .import-pgn-btn {
+                align-self: end;
+                padding: variables.$s1 variables.$s2;
+            }
+        }
+
+
+        .matches-list {
+            @include variables.rounded;
+            color: variables.$cyan2;
+
+
+
+            .match {
+                cursor: pointer;
+
+                padding: variables.$s1 variables.$s2;
+                background: variables.$black1;
+
+
+                &:not(last-child) {
+                    border-bottom: variables.$px solid variables.$black25;
+                }
+
+                &:nth-child(even) {
+                    background: variables.$black15;
+                }
+
+                &:hover {
+                    background: variables.$black2;
+                }
+
+                transition: background .2s;
+            }
+
+            .match {
+                display: flex;
+                gap: variables.$m1;
+
+                .board {
+                    display: none;
+                    aspect-ratio: 1;
+                    border: variables.$px solid variables.$cyan-2;
+                    border-radius: variables.$s0;
+                    background: variables.$cyan25;
+                    height: 14rem;
+
+
+                    @include variables.respond-to("sm") {
+                        display: flex;
+                    }
+                }
+
+                .info {
+                    flex: 1;
+                }
+
+                .info {
+                    display: flex;
+                    flex-flow: column;
+
+                    align-items: start;
+
+                    .situation {
+                        .time {
+                            font-size: variables.$s2;
+                            color: variables.$cyan3;
+                        }
+                    }
+
+                    .vs {
+                        flex: 1;
+                        align-self: center;
+
+                        display: flex;
+                        flex-flow: column;
+                        align-items: center;
+                        justify-content: center;
+
+                        .players {
+                            font-size: variables.$m25;
+                        }
+                        .outcome {
+                            font-size: variables.$m15;
+                        }
+                    }
+
+                    .opening {
+                        font-size: variables.$s3;
+                    }
+
+                    .diverge {
+                        display: flex;
+                        white-space: nowrap;
+                        gap: variables.$s0;
+                        align-items: flex-end;
+
+                        font-size: variables.$m15;
+
+                        @include variables.respond-to("sm") {
+                            font-size: variables.$m2;
+                        }
+
+                        .nb-moves, .after-move, .move {
+                            line-height: 1.2em;
+                            color: variables.$cyan1;
+
+                            font-size: variables.$m25;
+
+                            @include variables.respond-to("sm") {
+                                font-size: variables.$m3;
+                            }
+    
+    
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
