@@ -3,6 +3,7 @@
 
 $spacing: 0.25rem;
 $spacing_m: 0.5rem;
+$spacing_l: 3rem;
 
 $px: 1px;
 $s0: $spacing * 0.5;
@@ -18,11 +19,22 @@ $m25: $spacing_m * 2.5;
 $m3: $spacing_m * 3;
 $m35: $spacing_m * 3.5;
 $m4: $spacing_m * 4;
+$l0: $spacing_l * 0.5;
+$l1: $spacing_l * 1;
+$l15: $spacing_l * 1.5;
+$l2: $spacing_l * 2;
+$l25: $spacing_l * 2.5;
+$l3: $spacing_l * 3;
+$l35: $spacing_l * 3.5;
+$l4: $spacing_l * 4;
+
+
 
 $white0: white;
 $white1: color.adjust($white0, $lightness: -10%);
 $white2: color.adjust($white0, $lightness: -20%);
 $white3: color.adjust($white0, $lightness: -30%);
+$white5: color.adjust($white0, $lightness: -50%);
 $black0: black;
 $black05: color.adjust($black0, $lightness:  5%);
 $black1: color.adjust($black0,  $lightness: 10%);
@@ -31,6 +43,8 @@ $black2: color.adjust($black0,  $lightness: 20%);
 $black25: color.adjust($black0,  $lightness: 25%);
 $black3: color.adjust($black0,  $lightness: 30%);
 $cyan0: cyan;
+$cyan-5: color.adjust($cyan0, $lightness: 50%);
+$cyan-4: color.adjust($cyan0, $lightness: 40%);
 $cyan-3: color.adjust($cyan0, $lightness: 30%);
 $cyan-25: color.adjust($cyan0, $lightness: 25%);
 $cyan-2: color.adjust($cyan0, $lightness: 20%);
@@ -42,7 +56,11 @@ $cyan15: color.adjust($cyan0,  $lightness: -15%);
 $cyan2: color.adjust($cyan0,  $lightness: -20%);
 $cyan25: color.adjust($cyan0,  $lightness: -25%);
 $cyan3: color.adjust($cyan0,  $lightness: -30%);
-$gray3: color.adjust($cyan3, $hue: 10, $whiteness: -25%);
+$cyan35: color.adjust($cyan0,  $lightness: -35%);
+$cyan4: color.adjust($cyan0,  $lightness: -40%);
+$cyan45: color.adjust($cyan0,  $lightness: -45%);
+$cyan5: color.adjust($cyan0,  $hue: 30%, $saturation: -80%, $lightness: -40%);
+$gray3: color.adjust($cyan0, $hue: 20%, $saturation: -30%, $lightness: -40%);
 
 
 @mixin rounded {

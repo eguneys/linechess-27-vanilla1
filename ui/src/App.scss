@@ -1,5 +1,25 @@
 @use 'variables';
 
+/* width */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: variables.$white1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: variables.$black1;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: variables.$black2;
+}
+
 body {
     background: variables.$black0;
     color: variables.$white0;
@@ -58,7 +78,7 @@ a {
             }
 
         background: variables.$gray3;
-        border-bottom: variables.$s0 solid variables.$black3;
+        border-bottom: variables.$px solid variables.$black1;
     }
 }
 
@@ -76,6 +96,20 @@ main {
 
             &:hover {
                background: variables.$cyan-3;
+            }
+        }
+
+
+        &.secondary {
+            cursor: pointer;
+            border-radius: variables.$s1;
+            border: variables.$px solid variables.$cyan-2;
+            background: variables.$cyan4;
+            color: variables.$cyan-2;
+            font-size: variables.$m15;
+
+            &:hover {
+               background: variables.$cyan35;
             }
         }
     }

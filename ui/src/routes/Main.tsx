@@ -22,10 +22,41 @@ const TabContents = {
   repertoire: RepertoireContent
 }
 
+const list = "asdfa,".repeat(30).split(',')
 function RepertoireContent() {
+
+
   return (<>
     <div class='dc-repertoire'>
-
+      <div class='re-library'>
+        <div class='opening-list'>
+          <div class='header'>
+            <span class='title'>Library</span>
+            <button class='secondary'>+ New Opening</button>
+          </div>
+          <div class='content'>
+            <For each={list}>{ item =>
+              <div class='opening'>
+                {item}
+              </div>
+            }</For>
+          </div>
+        </div>
+        <div class='opening-lines'>
+          <For each={[]} fallback={
+            <div class='no-content'>
+              <div class='circle'></div>
+              No Repertoire Selected
+              <p class='info'>
+                Initialize an opening from the library to add new opening lines
+              </p>
+            </div>
+          }>{ () =>
+            <div class='lines'>
+            </div>
+          }</For>
+        </div>
+      </div>
     </div>
   </>)
 }

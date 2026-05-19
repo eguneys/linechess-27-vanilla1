@@ -107,7 +107,7 @@ main {
 
 
                 &:not(last-child) {
-                    border-bottom: variables.$px solid variables.$black25;
+                    border-bottom: variables.$px solid variables.$black2;
                 }
 
                 &:nth-child(even) {
@@ -128,8 +128,8 @@ main {
                 .board {
                     display: none;
                     aspect-ratio: 1;
-                    border: variables.$px solid variables.$cyan-2;
-                    border-radius: variables.$s0;
+                    border: variables.$px solid variables.$cyan-05;
+                    border-radius: variables.$s1;
                     background: variables.$cyan25;
                     height: 14rem;
 
@@ -201,6 +201,100 @@ main {
     
     
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+main {
+    .dc-repertoire {
+        display: grid;
+
+        grid-template-areas: 'library';
+
+        .re-library {
+            grid-area: library;
+        }
+    }
+
+
+    .dc-repertoire {
+        .re-library {
+            @include variables.rounded;
+            color: variables.$cyan2;
+        }
+
+
+        .re-library {
+
+            display: flex;
+            flex-flow: column;
+
+            @include variables.respond-to("sm") {
+                flex-flow: row;
+            }
+
+            .opening-list {
+
+                border-bottom: variables.$px solid variables.$black2;
+                @include variables.respond-to("sm") {
+                    border-right: variables.$px solid variables.$black2;
+                }
+    
+                .header {
+                   border-bottom: variables.$px solid variables.$black2;
+                }
+
+                .content {
+                    overflow-y: auto;
+                    height: 12em;
+                }
+            }
+
+
+            .opening-list {
+                .header {
+                    padding: variables.$s2;
+                    display: flex;
+                    justify-content: space-between;
+                    gap: variables.$l35;
+
+                    color: variables.$cyan-1;
+                    background: variables.$cyan5;
+                }
+            }
+
+            .opening-lines {
+                flex: 1;
+                display: flex;
+                flex-flow: column;
+                justify-content: center;
+
+                .no-content {
+                    display: flex;
+                    flex-flow: column;
+
+                    justify-content: center;
+                    align-items: center;
+
+                    text-transform: uppercase;
+                    color: variables.$white0;
+
+                    p {
+                        font-size: variables.$s3;
+                        color: variables.$cyan1;
+                        text-align: center;
+                    }
+
+                    .circle {
+                        aspect-ratio: 1;
+                        width: variables.$m3;
+                        border-radius: 50%;
+                        background: variables.$cyan-25;
+                        opacity: .1;
                     }
                 }
             }
