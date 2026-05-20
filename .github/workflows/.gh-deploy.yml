@@ -46,7 +46,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
+      pages: write
+      id-token: write
     if: github.ref == 'refs/heads/main'
 
     steps:
