@@ -1,0 +1,1 @@
+import{c as e}from"./index-CFEykw3U.js";/* empty css             */var t=e(`<main><div class="not-found box"><div class=header> 404 · Not Found</div><div class=body><h2>404</h2><span>·</span><p>Not Found`),n=()=>t();export{n as default};

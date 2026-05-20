@@ -1,0 +1,1 @@
+(function(){(async()=>{postMessage(`ready`)})(),onmessage=e=>{console.log(e)}})();
