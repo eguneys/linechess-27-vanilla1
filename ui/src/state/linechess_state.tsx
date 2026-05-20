@@ -1,21 +1,27 @@
 import { createStore } from "solid-js/store"
 import { makePersisted } from "@solid-primitives/storage"
-import type { OpeningLineId } from "./types"
+import type { OpeningLineId, OpeningListId } from "./types"
 import { createAsync, type AccessorWithLatest } from "@solidjs/router"
 import type { Idb_Store, LightOpeningListModel, OpeningListModel } from "./idb_model"
+import { createSignal } from "solid-js"
 
 export type DashboardTab = 'dashboard' | 'repertoire'
 
 
 export type State = {
     dashboard_tab: DashboardTab
-    selected_opening_line_id: OpeningLineId | undefined
-    selected_opening_line: OpeningListModel | undefined
+    selected_opening_list_id: OpeningLineId | undefined
+    selected_opening_list: OpeningListModel | undefined
     opening_lists: LightOpeningListModel[]
+    is_create_new_opening_modal_open: boolean
 }
 
 export type Actions = {
     set_dashboard_tab: (tab: DashboardTab) => void
+    set_open_create_new_opening: (v: boolean) => void
+    create_opening_list: (name: string) => Promise<OpeningListId | undefined>
+    select_opening_list: (id: OpeningListId) => void
+    delete_opening_list: (id: OpeningListId) => void
 }
 
 export type LinechessStore = [State, Actions]
@@ -23,25 +29,29 @@ export type LinechessStore = [State, Actions]
 
 type LinechessPersistedStore = {
     dashboard_tab: DashboardTab
-    selected_opening_line_id: OpeningLineId | undefined
+    selected_opening_list_id: OpeningLineId | undefined
+    is_create_new_opening_modal_open: boolean
 }
 
 export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | undefined>): LinechessStore {
 
     let [store, set_store] = makePersisted(createStore<LinechessPersistedStore>({
+        is_create_new_opening_modal_open: false,
         dashboard_tab: 'dashboard',
-        selected_opening_line_id: undefined,
+        selected_opening_list_id: undefined,
     }), { name: '.linechess.store.v1'})
 
-    const selected_opening_line = createAsync(async () => {
-        if (!store.selected_opening_line_id) {
+    const selected_opening_list = createAsync(async () => {
+        if (!store.selected_opening_list_id) {
             return undefined
         }
 
-        return await get_db()?.[0].get_opening_list_by_id(store.selected_opening_line_id)
+        return await get_db()?.[0].get_opening_list_by_id(store.selected_opening_list_id)
     })
 
+    const [fetch_lists, set_fetch_lists] = createSignal(false, { equals: false })
     const opening_lists = createAsync(async () => {
+        fetch_lists()
         return await get_db()?.[0].get_opening_lists()
     })
 
@@ -49,14 +59,17 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
         get dashboard_tab() {
             return store.dashboard_tab
         },
-        get selected_opening_line_id() {
-            return store.selected_opening_line_id
+        get selected_opening_list_id() {
+            return store.selected_opening_list_id
         },
-        get selected_opening_line() {
-            return selected_opening_line()
+        get selected_opening_list() {
+            return selected_opening_list()
         },
         get opening_lists() {
             return opening_lists() ?? []
+        },
+        get is_create_new_opening_modal_open() {
+            return store.is_create_new_opening_modal_open
         }
     }
 
@@ -66,6 +79,33 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
                 dashboard_tab: tab
             })
         },
+        set_open_create_new_opening(v: boolean) {
+            set_store({
+                is_create_new_opening_modal_open: v
+            })
+        },
+        async create_opening_list(name: string) {
+            let res = await get_db()?.[1].create_opening_list(name)
+
+            set_fetch_lists(true)
+            return res
+        },
+        select_opening_list(id: OpeningListId) {
+            set_store({
+                selected_opening_list_id: id
+            })
+        },
+        async delete_opening_list(id: OpeningListId) {
+
+            await get_db()?.[1].delete_opening_list(id)
+
+
+            set_fetch_lists(true)
+            let next_id = opening_lists()?.find(_ => _.id !== id)?.id
+            set_store({
+                selected_opening_list_id: next_id
+            })
+        }
     }
 
     return [state, actions]

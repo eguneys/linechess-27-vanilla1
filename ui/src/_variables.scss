@@ -4,6 +4,7 @@
 $spacing: 0.25rem;
 $spacing_m: 0.5rem;
 $spacing_l: 3rem;
+$spacing_xl: 7rem;
 
 $px: 1px;
 $s0: $spacing * 0.5;
@@ -27,6 +28,15 @@ $l25: $spacing_l * 2.5;
 $l3: $spacing_l * 3;
 $l35: $spacing_l * 3.5;
 $l4: $spacing_l * 4;
+$xl0: $spacing_xl * 0.5;
+$xl1: $spacing_xl * 1;
+$xl15: $spacing_xl * 1.5;
+$xl2: $spacing_xl * 2;
+$xl25: $spacing_xl * 2.5;
+$xl3: $spacing_xl * 3;
+$xl35: $spacing_xl * 3.5;
+$xl4: $spacing_xl * 4;
+
 
 
 
@@ -36,6 +46,7 @@ $white2: color.adjust($white0, $lightness: -20%);
 $white3: color.adjust($white0, $lightness: -30%);
 $white5: color.adjust($white0, $lightness: -50%);
 $black0: black;
+$black025: color.adjust($black0, $lightness:  2.5%);
 $black05: color.adjust($black0, $lightness:  5%);
 $black075: color.adjust($black0, $lightness:  7.5%);
 $black1: color.adjust($black0,  $lightness: 10%);
@@ -62,9 +73,27 @@ $cyan3: color.adjust($cyan0,  $lightness: -30%);
 $cyan35: color.adjust($cyan0,  $lightness: -35%);
 $cyan4: color.adjust($cyan0,  $lightness: -40%);
 $cyan45: color.adjust($cyan0,  $lightness: -45%);
-$cyan5: color.adjust($cyan0,  $hue: 30%, $saturation: -80%, $lightness: -40%);
-$gray3: color.adjust($cyan0, $hue: 20%, $saturation: -30%, $lightness: -40%);
-
+$cyan5: color.adjust($cyan0,  $hue: 20deg, $saturation: -80%, $lightness: -40%);
+$gray3: color.adjust($cyan0, $hue: 10deg, $saturation: -30%, $lightness: -40%);
+$backdrop-color: color.mix($black3, transparent, 10%);
+$red0: red;
+$red-5: color.adjust($red0, $lightness: 50%);
+$red-4: color.adjust($red0, $lightness: 40%);
+$red-3: color.adjust($red0, $lightness: 30%);
+$red-25: color.adjust($red0, $lightness: 25%);
+$red-2: color.adjust($red0, $lightness: 20%);
+$red-1: color.adjust($red0, $lightness: 10%);
+$red-05: color.adjust($red0,$lightness:  5%);
+$red05: color.adjust($red0, $lightness: -5%);
+$red1: color.adjust($red0,  $lightness: -10%);
+$red15: color.adjust($red0,  $lightness: -15%);
+$red2: color.adjust($red0,  $lightness: -20%);
+$red25: color.adjust($red0,  $lightness: -25%);
+$red3: color.adjust($red0,  $lightness: -30%);
+$red35: color.adjust($red0,  $lightness: -35%);
+$red4: color.adjust($red0,  $lightness: -40%);
+$red45: color.adjust($red0,  $lightness: -45%);
+$red5: color.adjust($red0,  $hue: 20deg, $saturation: -80%, $lightness: -40%);
 
 @mixin rounded {
     border-radius: $s0;
@@ -90,4 +119,9 @@ $breakpoints: (
     @else {
         @warn "Unknown breakpoint: #{$breakpoint}.";
     }
+}
+
+@mixin fixed-inset {
+    position: fixed;
+    inset: 0;
 }

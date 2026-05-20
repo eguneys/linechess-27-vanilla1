@@ -28,7 +28,8 @@ export async function make_idb_model(): Promise<Idb_Store> {
 
     let state: Idb_Model_State = {
         async get_opening_lists() {
-            return db_state.get_opening_lists()
+            return (await db_state.get_opening_lists())
+                .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
         },
         async get_opening_list_by_id(id: OpeningListId) {
             let list = await db_state.get_opening_list_by_id(id)

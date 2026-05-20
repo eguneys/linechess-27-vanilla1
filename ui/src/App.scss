@@ -124,3 +124,39 @@ main {
         transform: scale(1.1) rotate(6deg);
     }
 }
+
+
+main {
+    dialog {
+
+        @include variables.fixed-inset;
+        width: auto;
+        height: auto;
+        background-color: variables.$backdrop-color;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+
+        & .dialog-backdrop {
+            @include variables.fixed-inset;
+        }
+    }
+}
+
+main {
+    input[type='text'] {
+        background: variables.$cyan5;
+        border: none;
+        padding: variables.$m0;
+        border-radius: variables.$m0;
+
+        color: variables.$white1;
+
+        &::placeholder {
+           color: variables.$cyan15;
+        }
+
+        &:invalid {
+            border: variables.$px dashed variables.$red1;
+        }
+    }
+}

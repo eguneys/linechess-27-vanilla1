@@ -6,6 +6,11 @@
     margin: 0;
 }
 
+dialog {
+    padding: 0;
+    border: none;
+}
+
 html, body {
     height: 100%;
 }

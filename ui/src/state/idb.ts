@@ -22,6 +22,7 @@ export type DatabaseState = {
 
 export type DatabaseActions = {
     create_opening_list(name: string): Promise<OpeningListId>
+    delete_opening_list(id: OpeningListId): Promise<void>
 }
 
 export type DatabaseStore = [DatabaseState, DatabaseActions]
@@ -56,9 +57,13 @@ export async function make_database(): Promise<DatabaseStore> {
         async create_opening_list(name: string) {
             let value: OpeningList = {
                 id: crypto.randomUUID(),
-                name
+                name,
+                created_at: new Date()
             }
             return await db.put('opening_lists', value)
+        },
+        async delete_opening_list(id: OpeningListId) {
+            return await db.delete('opening_lists', id)
         }
     }
 

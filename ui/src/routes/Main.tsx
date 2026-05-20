@@ -1,8 +1,9 @@
 import { Dynamic, For, Show } from "solid-js/web"
 import { useState } from "../state/State"
 import { A } from "@solidjs/router"
-import { createSelector } from "solid-js"
+import { createSelector, } from "solid-js"
 import './Main.scss'
+import type { OpeningListModel } from "../state/idb_model"
 
 function Main() {
 
@@ -22,9 +23,13 @@ const TabContents = {
   repertoire: RepertoireContent
 }
 
+// @ts-ignore
 const list = "asdfa,".repeat(30).split(',')
 function RepertoireContent() {
 
+  const [{ linechess_state: state }, { linechess_actions: { set_open_create_new_opening, select_opening_list } }] = useState()
+
+  const is_selected_opening = createSelector(() => state.selected_opening_list_id)
 
   return (<>
     <div class='dc-repertoire'>
@@ -32,18 +37,18 @@ function RepertoireContent() {
         <div class='opening-list'>
           <div class='header'>
             <span class='title'>Library</span>
-            <button class='secondary'>+ New Opening</button>
+            <button onClick={() => set_open_create_new_opening(true)} class='secondary'>+ New Opening</button>
           </div>
           <div class='content'>
-            <For each={list}>{ item =>
-              <div class='opening'>
-                {item}
+            <For each={state.opening_lists}>{ item =>
+              <div onClick={() => select_opening_list(item.id)} class='opening' classList={{active: is_selected_opening(item.id)}}>
+                {item.name}
               </div>
             }</For>
           </div>
         </div>
         <div class='opening-lines'>
-          <For each={[]} fallback={
+          <Show when={state.selected_opening_list} fallback={
             <div class='no-content'>
               <div class='circle'></div>
               No Repertoire Selected
@@ -51,13 +56,97 @@ function RepertoireContent() {
                 Initialize an opening from the library to add new opening lines
               </p>
             </div>
-          }>{ () =>
-            <div class='lines'>
-            </div>
-          }</For>
+          }>{ list => 
+            <OpeningListViewOnPanel list={list()}/>
+            }</Show>
         </div>
       </div>
+      <Show when={state.is_create_new_opening_modal_open}>
+        <CreateNewOpeningDialog />
+      </Show>
     </div>
+  </>)
+}
+
+function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
+
+
+  const [, { linechess_actions: {delete_opening_list} }] = useState()
+
+  const delete_this_opening_list = () => {
+    delete_opening_list(props.list.id)
+  }
+
+  return (<>
+    <div class='opening-lines-view'>
+      <div class='header'>
+        <span class='title'>{props.list.name}</span>
+        <button class='primary'>+ Add new Line</button>
+      </div>
+      <div class='body'>
+      <For each={props.list.lines} fallback={
+        <div class='no-lines'>
+          <div class='circle'></div>
+          No Lines listed
+          <p class='info'>
+            Add an opening line to get started
+          </p>
+        </div>
+      }>{() =>
+        <div class='lines'>
+        </div>
+        }</For>
+      </div>
+      <div class='footer'>
+        <button onClick={delete_this_opening_list} class='delete'>Delete opening list</button>
+        <button class='delete'>Delete selected line</button>
+      </div>
+    </div>
+  </>)
+}
+
+function CreateNewOpeningDialog() {
+
+  const [{ linechess_state: state },{ linechess_actions: { set_open_create_new_opening, create_opening_list, select_opening_list }}] = useState()
+
+  const close = () => set_open_create_new_opening(false)
+
+  const add_new_opening = async () => {
+
+    if (!$opening_name_text.checkValidity()) {
+      $opening_name_text.reportValidity()
+      return
+    }
+    let value = $opening_name_text.value
+    let id = await create_opening_list(value)
+    if (id !== undefined) {
+      select_opening_list(id)
+    }
+    close()
+  }
+
+  let $opening_name_text!: HTMLInputElement
+
+  return (<>
+    <dialog open={state.is_create_new_opening_modal_open}>
+      <div onClick={close} class='dialog-backdrop'></div>
+      <div class='create-new-opening-dialog-content'>
+        <div class='panel'>
+          <div class='body'>
+            <div class='title'>Add New Opening</div>
+
+            <div class='input-group'>
+               <label for="opening_name">Opening Name</label>
+               <input minLength={3} required={true} ref={$opening_name_text} id="opening_name" type='text' placeholder="Enter Opening Name..."></input>
+            </div>
+          </div>
+          <div class='action'>
+            <button type="submit" onClick={add_new_opening} class='primary'>Add New Opening</button>
+            <button onClick={close} class='secondary'>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
   </>)
 }
 
