@@ -6,6 +6,11 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -41,7 +46,6 @@ jobs:
           name: production-files
           path: web/ui/dist
 
-
   deploy:
     environment:
       name: github-pages
@@ -49,12 +53,6 @@ jobs:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Deploy to GitHub Pages
