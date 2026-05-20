@@ -403,8 +403,40 @@ main {
             
                 .body {
                     flex: 1;
+                    display: flex;
+                    flex-flow: column;
                 }
             
+                .body {
+ 
+                    .no-lines {
+                        flex: 1;
+                        padding: 1em;
+                        display: flex;
+                        flex-flow: column;
+                    
+                        justify-content: center;
+                        align-items: center;
+                    
+                        text-transform: uppercase;
+                        color: variables.$white0;
+                    
+                        p {
+                            font-size: variables.$s3;
+                            color: variables.$cyan1;
+                            text-align: center;
+                        }
+                    
+                        .circle {
+                            aspect-ratio: 1;
+                            width: variables.$m3;
+                            border-radius: 50%;
+                            background: variables.$cyan-25;
+                            opacity: .1;
+                        }
+                    }
+            
+                }
             }
         }
     }
