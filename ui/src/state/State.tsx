@@ -2,8 +2,7 @@ import { createContext, type JSX, useContext } from "solid-js"
 import { make_linechess_store, type Actions, type State } from "./linechess_state"
 import { make_worker, type WorkerActions, type WorkerState } from "./Worker"
 import { createAsync } from "@solidjs/router"
-import { make_idb_model, type Idb_Model_State } from "./idb_model"
-import type { DatabaseActions } from "./idb"
+import { make_idb_model, type Idb_Model_Actions, type Idb_Model_State } from "./idb_model"
 
 export const useState = () => useContext(LinechessContext)!
 
@@ -18,7 +17,7 @@ type LinechessState = {
 type LinechessActions = {
     linechess_actions: Actions
     worker_actions: WorkerActions
-    db_actions: DatabaseActions | undefined
+    db_actions: Idb_Model_Actions | undefined
 }
 
 export type LinechessStore = [LinechessState, LinechessActions]
