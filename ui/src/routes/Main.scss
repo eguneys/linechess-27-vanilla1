@@ -394,12 +394,12 @@ main {
 
                         @include variables.rounded;
                         border: none;
-                        background: variables.$red175;
+                        background: variables.$red2;
                         color: variables.$white2;
                         cursor: pointer;
 
                         &:hover {
-                           background: variables.$red05;
+                           background: variables.$red1;
                         }
                     }
                 }
@@ -452,6 +452,12 @@ main {
                     .lines {
                         flex: 1;
                         display: flex;
+                        flex-flow: column;
+
+                        @include variables.respond-to("sm") {
+                            flex-flow: row;
+                        }
+
                         background: variables.$black05;
 
                         .info {
@@ -489,6 +495,11 @@ main {
                                     background: variables.$cyan-2;
                                 }
                             }
+                        }
+
+                        .info {
+                            overflow-y: hidden;
+                            max-height: 20em;
                         }
                     }
                 }
@@ -541,6 +552,11 @@ main {
                         color: variables.$cyan1;
                         font-size: variables.$m15;
                         text-transform: uppercase;
+                    }
+
+                    .error {
+                        color: variables.$red1;
+                        font-size: variables.$s3;
                     }
                 }
             }

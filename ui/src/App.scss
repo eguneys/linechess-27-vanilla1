@@ -29,6 +29,8 @@ body {
 
 a {
     color: variables.$cyan15;
+    text-decoration: none;
+
 
     &:visited {
         color: variables.$cyan3;

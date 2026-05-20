@@ -1,7 +1,7 @@
 import { Dynamic, For, Show } from "solid-js/web"
 import { useState } from "../state/State"
 import { A } from "@solidjs/router"
-import { createSelector, } from "solid-js"
+import { createMemo, createSelector, createSignal, } from "solid-js"
 import './Main.scss'
 import type { OpeningListModel } from "../state/idb_model"
 
@@ -74,7 +74,7 @@ function RepertoireContent() {
 function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
 
 
-  const [{ linechess_state: state }, { linechess_actions: {delete_opening_list, set_open_add_new_line, select_opening_line } }] = useState()
+  const [{ linechess_state: state }, { linechess_actions: {delete_opening_list, set_open_add_new_line, select_opening_line, delete_selected_line } }] = useState()
 
   const delete_this_opening_list = () => {
     delete_opening_list(props.list.id)
@@ -105,9 +105,13 @@ function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
                 }</For>
               </div>
               <div class='info'>
-                Information
                 <Show when={state.selected_opening_line}>{ line =>
-                  {line().name}
+                  <>
+                    <div class='info-header'>
+                      <div class='title'>{line().name}</div>
+                      <PgnLine line={line().pgn}/>
+                    </div>
+                  </>
                 }</Show>
               </div>
             </div>
@@ -115,14 +119,27 @@ function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
       </div>
       <div class='footer'>
         <button onClick={delete_this_opening_list} class='delete'>Delete opening list</button>
-        <button class='delete'>Delete selected line</button>
+        <button onClick={delete_selected_line} class='delete'>Delete selected line</button>
       </div>
+    </div>
+  </>)
+}
+
+function PgnLine(props: { line: string }) {
+  const moves = createMemo(() => props.line.split(''))
+  return (<>
+    <div class='pgn'>
+      <For each={moves()}>{ move =>
+        <div class='move'>{move}</div>
+      }</For>
     </div>
   </>)
 }
 
 
 function AddNewLineOpeningDialog() {
+
+  const [pgn_error, set_pgn_error] = createSignal('')
 
   const [{ linechess_state: state }, { linechess_actions: { set_open_add_new_line, select_opening_line, create_opening_line }}] = useState()
 
@@ -143,11 +160,16 @@ function AddNewLineOpeningDialog() {
     let pgn_value = $opening_line_pgn_text.value
 
 
-    let id = await create_opening_line(value, pgn_value)
-    if (id !== undefined) {
-      select_opening_line(id)
+    try {
+      set_pgn_error('')
+      let id = await create_opening_line(value, pgn_value)
+      if (id !== undefined) {
+        select_opening_line(id)
+      }
+      close()
+    } catch (e) {
+      set_pgn_error('Invalid PGN')
     }
-    close()
   }
 
   const paste_pgn = () => {
@@ -174,7 +196,10 @@ function AddNewLineOpeningDialog() {
 
             <div class='input-group'>
                <label for="opening_line_pgn">Opening Line PGN</label>
-               <input minLength={8} required={true} ref={$opening_line_pgn_text} id="opening_line_pgn" type='text' placeholder="Enter Line PGN..."></input>
+               <input aria-invalid={!!pgn_error()} minLength={8} required={true} ref={$opening_line_pgn_text} id="opening_line_pgn" type='text' placeholder="Enter Line PGN..."></input>
+               <Show when={pgn_error()}>{error =>
+                <div class='error'>{error()}</div>
+              }</Show>
               <button onClick={paste_pgn} class='secondary'>Paste PGN</button>
             </div>
           </div>

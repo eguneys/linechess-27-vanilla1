@@ -1,3 +1,5 @@
+import type { SAN, UCI } from "./chess_parser"
+
 export type OpeningListId = string
 
 export type OpeningList = {
@@ -14,4 +16,12 @@ export type OpeningLine = {
     name: string
     pgn: string
     created_at: Date
+}
+
+
+export type SingleLineMove = {
+    id: OpeningLineId
+    ply: number
+    uci: UCI
+    san: SAN
 }

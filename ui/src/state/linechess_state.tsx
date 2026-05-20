@@ -28,6 +28,7 @@ export type Actions = {
     delete_opening_list: (id: OpeningListId) => void
     select_opening_line: (id: OpeningLineId) => void
     create_opening_line: (name: string, pgn: string) => Promise<OpeningLineId | undefined>
+    delete_selected_line: () => Promise<void>
 }
 
 export type LinechessStore = [State, Actions]
@@ -51,9 +52,9 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
         selected_opening_line_id: undefined,
     }), { name: '.linechess.store.v1'})
 
-    const [fetch_opening_line, set_fetch_opening_line] = createSignal(false, { equals: false })
+    const [fetch_selected_opening_list, set_fetch_selected_opening_list] = createSignal(false, { equals: false })
     const selected_opening_list = createAsync(async () => {
-        fetch_opening_line()
+        fetch_selected_opening_list()
         if (!store.selected_opening_list_id) {
             return undefined
         }
@@ -122,7 +123,7 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
             })
         },
         async create_opening_list(name: string) {
-            let res = await get_db()?.[1].create_opening_list(name)
+            let res = await get_db()?.[1].db_actions.create_opening_list(name)
 
             set_fetch_lists(true)
             return res
@@ -134,7 +135,7 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
         },
         async delete_opening_list(id: OpeningListId) {
 
-            await get_db()?.[1].delete_opening_list(id)
+            await get_db()?.[1].db_actions.delete_opening_list(id)
 
 
             set_fetch_lists(true)
@@ -149,15 +150,30 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
             })
         },
         async create_opening_line(name: string, pgn: string) {
-            let selected_opening_line_id = state.selected_opening_list_id
-            if (!selected_opening_line_id) {
+            let selected_opening_list_id = state.selected_opening_list_id
+            if (!selected_opening_list_id) {
                 return undefined
             }
 
-            let res = await get_db()?.[1].create_opening_line(selected_opening_line_id, name, pgn)
+            let res = await get_db()?.[1].create_opening_line(selected_opening_list_id, name, pgn)
 
-            set_fetch_opening_line(true)
+            set_fetch_selected_opening_list(true)
             return res
+        },
+        async delete_selected_line() {
+            let id = state.selected_opening_line_id
+            if (!id) {
+                return
+            }
+
+            await get_db()?.[1].db_actions.delete_opening_line(id)
+
+
+            set_fetch_selected_opening_list(true)
+            let next_id = selected_opening_list()?.lines.find(_ => _.id !== id)?.id
+            set_store({
+                selected_opening_line_id: next_id
+            })
         },
     }
 

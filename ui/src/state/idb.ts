@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { OpeningLine, OpeningLineId, OpeningList, OpeningListId } from './types'
+import type { OpeningLine, OpeningLineId, OpeningList, OpeningListId, SingleLineMove } from './types'
 
 interface LinechessDB extends DBSchema {
     opening_lists: {
@@ -11,6 +11,10 @@ interface LinechessDB extends DBSchema {
         value: OpeningLine
         indexes: { 'by_list_id': OpeningListId }
     }
+    line_moves: {
+        key: OpeningLineId
+        value: SingleLineMove
+    }
 }
 
 export type DatabaseState = {
@@ -18,17 +22,21 @@ export type DatabaseState = {
     get_opening_list_by_id(id: OpeningListId): Promise<OpeningList | undefined>
     get_opening_lines_by_list_id(list_id: OpeningListId): Promise<OpeningLine[]>
     get_opening_line_by_id(id: OpeningLineId): Promise<OpeningLine | undefined>
+    get_line_moves_by_line_id(id: OpeningLineId): Promise<SingleLineMove[]>
 }
 
 export type DatabaseActions = {
     create_opening_list(name: string): Promise<OpeningListId>
     delete_opening_list(id: OpeningListId): Promise<void>
     create_opening_line(id: OpeningListId, name: string, pgn: string): Promise<OpeningLineId>
+    delete_opening_line(id: OpeningLineId): Promise<void>
+    create_line_moves(moves: SingleLineMove[]): Promise<void>
+    delete_line_moves(id: OpeningLineId): Promise<void>
 }
 
 export type DatabaseStore = [DatabaseState, DatabaseActions]
 
-const VERSION = 1
+const VERSION = 2
 
 export async function make_database(): Promise<DatabaseStore> {
 
@@ -50,7 +58,10 @@ export async function make_database(): Promise<DatabaseStore> {
             return db.getAllFromIndex('opening_lines', 'by_list_id', id)
         },
         get_opening_line_by_id(id: OpeningLineId) {
-            return db.getFromIndex('opening_lines', 'by_list_id', id)
+            return db.get('opening_lines', id)
+        },
+        get_line_moves_by_line_id(id: OpeningLineId) {
+            return db.getAll('line_moves', id)
         }
     }
 
@@ -76,6 +87,27 @@ export async function make_database(): Promise<DatabaseStore> {
             }
             return await db.put('opening_lines', value)
         },
+        async delete_opening_line(id: OpeningLineId) {
+            return await db.delete('opening_lines', id)
+        },
+        async create_line_moves(moves: SingleLineMove[]) {
+
+            const tx = db.transaction('line_moves', 'readwrite')
+
+            await Promise.all([
+                ...moves.map(async move =>
+                    await tx.store.put(move)
+                ),
+                tx.done
+            ])
+        },
+        async delete_line_moves(id: OpeningLineId) {
+            const tx = db.transaction('line_moves', 'readwrite')
+            for await (const cursor of tx.store.iterate(id)) {
+                await cursor.delete()
+            }
+            await tx.done
+        }
     }
 
     return [state, actions]
@@ -83,14 +115,26 @@ export async function make_database(): Promise<DatabaseStore> {
 
 
 function create_tables(db: IDBPDatabase<LinechessDB>) {
-    db.createObjectStore('opening_lists', {
-        keyPath: 'id',
-    })
+    if (!db.objectStoreNames.contains('opening_lists')) {
 
-    const line_store = db.createObjectStore('opening_lines', {
-        keyPath: 'id',
-    })
+        db.createObjectStore('opening_lists', {
+            keyPath: 'id',
+        })
+    }
+
+    if (!db.objectStoreNames.contains('opening_lines')) {
+        const line_store = db.createObjectStore('opening_lines', {
+            keyPath: 'id',
+        })
+
+        line_store.createIndex('by_list_id', 'list_id')
+    }
+
+    if (!db.objectStoreNames.contains('line_moves')) {
+        db.createObjectStore('line_moves', {
+            keyPath: 'id'
+        })
+    }
 
 
-    line_store.createIndex('by_list_id', 'list_id')
 }

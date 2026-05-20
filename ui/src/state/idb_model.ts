@@ -1,3 +1,4 @@
+import { parse_mainline_ucis_from_pgn } from "./chess_parser"
 import { make_database, type DatabaseActions } from "./idb"
 import type { OpeningLineId, OpeningList, OpeningListId } from "./types"
 
@@ -21,7 +22,12 @@ export type Idb_Model_State = {
     get_opening_line_by_id(id: OpeningLineId): Promise<OpeningLineModel | undefined>
 }
 
-export type Idb_Store = [Idb_Model_State, DatabaseActions]
+export type Idb_Model_Actions = {
+    db_actions: DatabaseActions
+    create_opening_line(id: OpeningListId, name: string, pgn: string): Promise<OpeningLineId>
+}
+
+export type Idb_Store = [Idb_Model_State, Idb_Model_Actions]
 
 export async function make_idb_model(): Promise<Idb_Store> {
 
@@ -39,6 +45,7 @@ export async function make_idb_model(): Promise<Idb_Store> {
                 return undefined
             }
             let lines = await db_state.get_opening_lines_by_list_id(id)
+            lines = lines.sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
 
             let res: OpeningListModel = {
                 id: list.id,
@@ -54,6 +61,32 @@ export async function make_idb_model(): Promise<Idb_Store> {
             return line
         }
     }
+
+    let actions = {
+        db_actions,
+        async create_opening_line(id: OpeningListId, name: string, pgn: string) {
+
+            let sans = parse_mainline_ucis_from_pgn(pgn)
+
+            if (sans.length < 3) {
+                throw new InvalidPGNException()
+            }
+
+            let moves = sans.map(({uci, san}, index) => {
+                return {
+                    id,
+                    ply: index + 1,
+                    uci,
+                    san
+                }
+            })
+            let res = await db_actions.create_opening_line(id, name, pgn)
+            await db_actions.create_line_moves(moves)
+            return res
+        }
+    }
     
-    return [state, db_actions]
+    return [state, actions]
 }
+
+class InvalidPGNException extends Error {}
