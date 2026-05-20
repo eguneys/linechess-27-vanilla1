@@ -1,0 +1,2 @@
+- [ ] Auto suggest opening names from Pasted PGN
+- [ ] Show chess board to display lines

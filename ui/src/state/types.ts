@@ -19,9 +19,16 @@ export type OpeningLine = {
 }
 
 
+export type SingleLineMoveId = string
 export type SingleLineMove = {
-    id: OpeningLineId
+    id: SingleLineMoveId
+    line_id: OpeningLineId
     ply: number
     uci: UCI
     san: SAN
 }
+
+export function gen_id() {
+    return Math.random().toString(16).slice(2, 10)
+}
+

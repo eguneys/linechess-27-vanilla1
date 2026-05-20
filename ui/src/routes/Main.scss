@@ -1,7 +1,7 @@
 @use '../variables';
 
 
-main {
+.main-dashboard-tabs {
 
     display: grid;
 
@@ -17,7 +17,7 @@ main {
     }
 }
 
-main {
+.main-dashboard-tabs {
 
     .dashboard-tabs {
 
@@ -50,7 +50,7 @@ main {
 
 
 
-main {
+.main-dashboard-tabs {
     .dc-dashboard {
         display: grid;
 
@@ -209,7 +209,7 @@ main {
 }
 
 
-main {
+.main-dashboard-tabs {
     .dc-repertoire {
         display: grid;
 
@@ -230,6 +230,8 @@ main {
         .re-library {
             display: flex;
             flex-flow: column;
+
+            margin-bottom: variables.$s0;
 
             @include variables.respond-to("sm") {
                 flex-flow: row;
@@ -359,6 +361,7 @@ main {
                 flex: 1;
                 display: flex;
                 flex-flow: column;
+                min-height: 40em;
             
                 .header {
                     display: flex;
@@ -466,8 +469,6 @@ main {
 
                         .list {
                             flex: 3;
-
-                            height: 20em;
                         }
 
                         .list {
@@ -498,8 +499,52 @@ main {
                         }
 
                         .info {
+                            display: flex;
+                            flex-flow: column;
+
                             overflow-y: hidden;
-                            max-height: 20em;
+
+
+                            .info-header {
+                                padding: variables.$s0;
+                                border-bottom: variables.$px solid variables.$cyan5;
+                                background: variables.$black075;
+                            }
+
+                            .pgn {
+
+                                display: flex;
+                                flex-flow: column;
+                                flex: 1 1 0;
+
+                                .pgn-list {
+                                    overflow-y: auto;
+                                    flex: 2;
+                                }
+
+                                .stats {
+                                    flex: 1;
+                                }
+
+                                .pgn-list {
+                                    padding: variables.$s0;
+                                
+                                   .move {
+                                       cursor: pointer;
+                                       display: inline-block;
+                                       padding: variables.$s0;
+                                       color: variables.$cyan-2;
+                                       gap: variables.$s0;
+                                       line-height: variables.$m3;
+                                
+                                       .index {
+                                        padding-inline-end: variables.$s0;
+                                           font-weight: 700;
+                                           color: variables.$cyan2;
+                                       }
+                                   }
+                                }
+                            }
                         }
                     }
                 }
@@ -508,8 +553,59 @@ main {
     }
 }
 
+.main-dashboard-tabs {
+    .stats {
 
-main {
+        display: flex;
+        flex-flow: column;
+
+        gap: variables.$s1;
+
+        padding: variables.$s1;
+
+
+        @include variables.respond-to("md") {
+           flex-flow: row;
+            align-items: flex-end;
+        }
+
+        .stat {
+            height: 4.5em;
+            flex: 1;
+            padding: variables.$s2;
+            border: variables.$px solid variables.$black3;
+            border-radius: variables.$m1;
+
+            background: variables.$cyan5;
+
+            .title {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                text-transform: uppercase;
+                font-size: variables.$s2;
+                color: variables.$cyan2;
+            }
+
+            .value {
+                color: variables.$white1;
+                font-size: variables.$m25;
+                font-weight: 600;
+            }
+        }
+    }
+
+    .progress-bar {
+        background: variables.$black05;
+        width: 100%;
+        height: variables.$m1;
+        border-radius: variables.$s0;
+        align-self: flex-end;
+    }
+}
+
+
+.main-dashboard-tabs {
     .create-new-opening-dialog-content {
         display: flex;
         justify-content: center;

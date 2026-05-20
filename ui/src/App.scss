@@ -35,6 +35,9 @@ a {
     &:visited {
         color: variables.$cyan3;
     }
+    &.out {
+        font-weight: bold;
+    }
 }
 
 .main-wrapper {
@@ -81,6 +84,15 @@ a {
 
         background: variables.$gray3;
         border-bottom: variables.$px solid variables.$black1;
+    }
+
+    footer {
+        display: flex;
+        justify-content: center;
+        gap: variables.$m0;
+        padding: variables.$l0;
+        background: variables.$black05;
+        color: variables.$black4;
     }
 }
 

@@ -1,19 +1,28 @@
 import { parse_mainline_ucis_from_pgn } from "./chess_parser"
 import { make_database, type DatabaseActions } from "./idb"
-import type { OpeningLineId, OpeningList, OpeningListId } from "./types"
+import { gen_id, type OpeningLineId, type OpeningList, type OpeningListId, type SingleLineMove } from "./types"
 
 export type LightOpeningListModel = OpeningList
 
 export type OpeningListModel = {
     id: OpeningListId
     name: string
-    lines: OpeningLineModel[]
+    lines: LightOpeningLineModel[]
 }
+
+export type LightOpeningLineModel = {
+    id: string
+    name: string
+    pgn: string
+}
+
+export type SingleLineMoveModel = SingleLineMove
 
 export type OpeningLineModel = {
     id: string
     name: string
     pgn: string
+    moves: SingleLineMoveModel[]
 }
 
 export type Idb_Model_State = {
@@ -58,31 +67,45 @@ export async function make_idb_model(): Promise<Idb_Store> {
         async get_opening_line_by_id(id: OpeningLineId) {
             let line = await db_state.get_opening_line_by_id(id)
 
-            return line
+            if (!line) {
+                return undefined
+            }
+
+            let moves = await db_state.get_line_moves_by_line_id(id)
+
+            moves = moves.sort((a, b) => a.ply - b.ply)
+
+            return {
+                id: line.id,
+                name: line.name,
+                pgn: line.pgn,
+                moves
+            }
         }
     }
 
     let actions = {
         db_actions,
-        async create_opening_line(id: OpeningListId, name: string, pgn: string) {
+        async create_opening_line(list_id: OpeningListId, name: string, pgn: string) {
 
             let sans = parse_mainline_ucis_from_pgn(pgn)
 
             if (sans.length < 3) {
                 throw new InvalidPGNException()
             }
+            let line_id = await db_actions.create_opening_line(list_id, name, pgn)
 
             let moves = sans.map(({uci, san}, index) => {
                 return {
-                    id,
+                    id: gen_id(),
+                    line_id,
                     ply: index + 1,
                     uci,
                     san
                 }
             })
-            let res = await db_actions.create_opening_line(id, name, pgn)
             await db_actions.create_line_moves(moves)
-            return res
+            return line_id
         }
     }
     

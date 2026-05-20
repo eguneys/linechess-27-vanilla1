@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { OpeningLine, OpeningLineId, OpeningList, OpeningListId, SingleLineMove } from './types'
+import { gen_id, type OpeningLine, type OpeningLineId, type OpeningList, type OpeningListId, type SingleLineMove } from './types'
 
 interface LinechessDB extends DBSchema {
     opening_lists: {
@@ -14,6 +14,7 @@ interface LinechessDB extends DBSchema {
     line_moves: {
         key: OpeningLineId
         value: SingleLineMove
+        indexes: { 'by_line_id': OpeningLineId }
     }
 }
 
@@ -36,7 +37,7 @@ export type DatabaseActions = {
 
 export type DatabaseStore = [DatabaseState, DatabaseActions]
 
-const VERSION = 2
+const VERSION = 3
 
 export async function make_database(): Promise<DatabaseStore> {
 
@@ -61,14 +62,14 @@ export async function make_database(): Promise<DatabaseStore> {
             return db.get('opening_lines', id)
         },
         get_line_moves_by_line_id(id: OpeningLineId) {
-            return db.getAll('line_moves', id)
+            return db.getAllFromIndex('line_moves', 'by_line_id', id)
         }
     }
 
     let actions = {
         async create_opening_list(name: string) {
             let value: OpeningList = {
-                id: crypto.randomUUID(),
+                id: gen_id(),
                 name,
                 created_at: new Date()
             }
@@ -79,7 +80,7 @@ export async function make_database(): Promise<DatabaseStore> {
         },
         async create_opening_line(list_id: OpeningListId, name: string, pgn: string) {
             let value: OpeningLine = {
-                id: crypto.randomUUID(),
+                id: gen_id(),
                 created_at: new Date(),
                 list_id,
                 pgn,
@@ -98,8 +99,9 @@ export async function make_database(): Promise<DatabaseStore> {
                 ...moves.map(async move =>
                     await tx.store.put(move)
                 ),
-                tx.done
             ])
+
+            await tx.done
         },
         async delete_line_moves(id: OpeningLineId) {
             const tx = db.transaction('line_moves', 'readwrite')
@@ -131,10 +133,13 @@ function create_tables(db: IDBPDatabase<LinechessDB>) {
     }
 
     if (!db.objectStoreNames.contains('line_moves')) {
-        db.createObjectStore('line_moves', {
+        let move_store = db.createObjectStore('line_moves', {
             keyPath: 'id'
         })
+        
+        move_store.createIndex('by_line_id', 'line_id')
     }
+
 
 
 }

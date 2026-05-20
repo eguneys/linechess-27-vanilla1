@@ -1,0 +1,101 @@
+@use '../variables';
+
+main {
+
+
+    .legal {
+        display: flex;
+        flex-flow: column;
+        margin: variables.$m3;
+
+
+        .header {
+            padding: variables.$s1 variables.$s2;
+            background: variables.$cyan3;
+            border-bottom: variables.$black2;
+            text-transform: uppercase;
+        }
+
+        .body {
+            padding: variables.$s2;
+            display: flex;
+            flex-flow: column;
+            justify-content: center;
+            gap: variables.$s1;
+
+            h2 {
+                text-transform: uppercase;
+            }
+
+            p {
+                text-indent: variables.$m2;
+            }
+
+           .last-updated {
+               background: variables.$black075;
+               @include variables.rounded;
+               align-self: flex-start;
+               padding-inline: variables.$s1;
+               line-height: variables.$m4;
+           }
+        }
+    }
+
+
+
+    .about {
+        display: flex;
+        flex-flow: column;
+        margin: variables.$m3;
+
+        .header {
+            padding: variables.$s1 variables.$s2;
+            background: variables.$cyan3;
+            border-bottom: variables.$black2;
+            text-transform: uppercase;
+        }
+
+        .body {
+            padding: variables.$s2;
+            display: flex;
+            flex-flow: column;
+            justify-content: center;
+            align-items: center;
+            gap: variables.$s1;
+        }
+    }
+
+
+    .not-found {
+        display: flex;
+        flex-flow: column;
+        margin: variables.$m3;
+
+        .header {
+            padding: variables.$s1 variables.$s2;
+            background: variables.$cyan3;
+            border-bottom: variables.$black2;
+            text-transform: uppercase;
+        }
+
+        .body {
+            padding: variables.$l2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: variables.$s1;
+        
+            font-size: variables.$l1;
+            text-transform: uppercase;
+        
+        
+        }
+    }
+}
+
+main {
+    .box {
+        @include variables.rounded;
+        background: variables.$black075;
+    }
+}

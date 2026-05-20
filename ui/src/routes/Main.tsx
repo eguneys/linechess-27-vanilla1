@@ -1,18 +1,21 @@
 import { Dynamic, For, Show } from "solid-js/web"
 import { useState } from "../state/State"
 import { A } from "@solidjs/router"
-import { createMemo, createSelector, createSignal, } from "solid-js"
+import { createMemo, createSelector, createSignal, onCleanup, createEffect, } from "solid-js"
 import './Main.scss'
 import type { OpeningListModel } from "../state/idb_model"
+import type { SingleLineMove } from "../state/types"
 
 function Main() {
 
   let [{linechess_state: state}] = useState()
   return (<>
     <main>
-      <DashboardTabs />
-      <div class='dashboard-content'>
-        <Dynamic component={TabContents[state.dashboard_tab]}/>
+      <div class='main-dashboard-tabs'>
+        <DashboardTabs />
+        <div class='dashboard-content'>
+          <Dynamic component={TabContents[state.dashboard_tab]} />
+        </div>
       </div>
     </main>
   </>)
@@ -109,8 +112,8 @@ function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
                   <>
                     <div class='info-header'>
                       <div class='title'>{line().name}</div>
-                      <PgnLine line={line().pgn}/>
                     </div>
+                    <PgnLine line={line().moves} />
                   </>
                 }</Show>
               </div>
@@ -119,23 +122,81 @@ function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
       </div>
       <div class='footer'>
         <button onClick={delete_this_opening_list} class='delete'>Delete opening list</button>
-        <button onClick={delete_selected_line} class='delete'>Delete selected line</button>
+        <Show when={state.selected_opening_line}>
+          <button onClick={delete_selected_line} class='delete'>Delete selected line</button>
+        </Show>
       </div>
     </div>
   </>)
 }
 
-function PgnLine(props: { line: string }) {
-  const moves = createMemo(() => props.line.split(''))
+function PgnLine(props: { line: SingleLineMove[] }) {
   return (<>
     <div class='pgn'>
-      <For each={moves()}>{ move =>
-        <div class='move'>{move}</div>
-      }</For>
+      <div class='pgn-list'>
+        <div>
+          <For each={props.line}>{move =>
+            <div class='move'>
+              <Show when={ply_to_display(move.ply)}>{index =>
+                <span class='index'>{index()}</span>
+              }</Show>{move.san}</div>
+          }</For>
+        </div>
+      </div>
+      <div class='stats'>
+        <div class='accuracy-rate stat'>
+          <div class='title'>Accuracy Score</div>
+          <div class='value percent'>0.0%</div>
+          <ProgressBar percent={50}/>
+        </div>
+        <div class='win-rate stat'>
+          <div class='title'>Overall Win Rate</div>
+          <div class='value percent'>0.0%</div>
+          <ProgressBar percent={50}/>
+        </div>
+        <div class='nb-games stat'>
+          <div class='title'>Total Games Played</div>
+          <div class='value'>0</div>
+        </div>
+      </div>
     </div>
   </>)
 }
 
+function ProgressBar(props: { percent: number }) {
+
+  const [t, set_t] = createSignal(0)
+
+  const fill_bar = createMemo(() => props.percent * ease_springOut(t()))
+
+  const fill_timer_fn = () => {
+    set_t(t() + 0.009)
+    if (t() >= 1) {
+      set_t(1)
+    } else {
+      timer_id = requestAnimationFrame(fill_timer_fn)
+    }
+  }
+  let timer_id = requestAnimationFrame(fill_timer_fn)
+
+
+  onCleanup(() => {
+    cancelAnimationFrame(timer_id)
+  })
+
+  let $bar!: HTMLDivElement
+
+  createEffect(() => {
+    if ($bar) $bar.style.width = `${fill_bar()}%`
+  })
+
+  return (<>
+    <div class='progress-bar'><div ref={$bar} class='bar'></div></div>
+  </>)
+}
+function ease_springOut(t: number) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+}
 
 function AddNewLineOpeningDialog() {
 
@@ -228,9 +289,14 @@ function CreateNewOpeningDialog() {
       return
     }
     let value = $opening_name_text.value
-    let id = await create_opening_list(value)
-    if (id !== undefined) {
-      select_opening_list(id)
+    try {
+      let id = await create_opening_list(value)
+      if (id !== undefined) {
+        select_opening_list(id)
+      }
+    } catch (e) {
+
+      alert(e)
     }
     close()
   }
@@ -334,3 +400,8 @@ function DashboardTabs() {
 
 
 export default Main
+
+
+export function ply_to_display(ply: number) {
+    return (ply % 2 === 1) ? `${Math.ceil(ply / 2)}.` : ''
+}
