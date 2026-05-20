@@ -1,20 +1,18 @@
-name: Deploy
-
+name: CI
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
+
   build:
-    name: Build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-        with:
-           path: web
+      - uses: actions/checkout@v6
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -30,7 +28,7 @@ jobs:
            cd ui
            pnpm install
            pnpm build
-
+    
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v6
         with:
@@ -38,22 +36,18 @@ jobs:
           path: web/ui/dist
 
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: production-files
-          path: web/ui/dist
-
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: web/ui/dist
+        id: deployment
+        uses: actions/deploy-pages@v5
