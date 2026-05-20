@@ -2,7 +2,7 @@ import { createStore } from "solid-js/store"
 import { makePersisted } from "@solid-primitives/storage"
 import type { OpeningLineId, OpeningListId } from "./types"
 import { createAsync, type AccessorWithLatest } from "@solidjs/router"
-import type { Idb_Store, LightOpeningListModel, OpeningListModel } from "./idb_model"
+import type { Idb_Store, LightOpeningListModel, OpeningLineModel, OpeningListModel } from "./idb_model"
 import { createSignal } from "solid-js"
 
 export type DashboardTab = 'dashboard' | 'repertoire'
@@ -10,18 +10,24 @@ export type DashboardTab = 'dashboard' | 'repertoire'
 
 export type State = {
     dashboard_tab: DashboardTab
-    selected_opening_list_id: OpeningLineId | undefined
+    selected_opening_list_id: OpeningListId | undefined
     selected_opening_list: OpeningListModel | undefined
     opening_lists: LightOpeningListModel[]
     is_create_new_opening_modal_open: boolean
+    is_add_new_line_modal_open: boolean
+    selected_opening_line_id: OpeningLineId | undefined
+    selected_opening_line: OpeningLineModel | undefined
 }
 
 export type Actions = {
     set_dashboard_tab: (tab: DashboardTab) => void
     set_open_create_new_opening: (v: boolean) => void
+    set_open_add_new_line: (v: boolean) => void
     create_opening_list: (name: string) => Promise<OpeningListId | undefined>
     select_opening_list: (id: OpeningListId) => void
     delete_opening_list: (id: OpeningListId) => void
+    select_opening_line: (id: OpeningLineId) => void
+    create_opening_line: (name: string, pgn: string) => Promise<OpeningLineId | undefined>
 }
 
 export type LinechessStore = [State, Actions]
@@ -29,25 +35,42 @@ export type LinechessStore = [State, Actions]
 
 type LinechessPersistedStore = {
     dashboard_tab: DashboardTab
-    selected_opening_list_id: OpeningLineId | undefined
+    selected_opening_list_id: OpeningListId | undefined
+    selected_opening_line_id: OpeningLineId | undefined
     is_create_new_opening_modal_open: boolean
+    is_add_new_line_modal_open: boolean
 }
 
 export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | undefined>): LinechessStore {
 
     let [store, set_store] = makePersisted(createStore<LinechessPersistedStore>({
         is_create_new_opening_modal_open: false,
+        is_add_new_line_modal_open: false,
         dashboard_tab: 'dashboard',
         selected_opening_list_id: undefined,
+        selected_opening_line_id: undefined,
     }), { name: '.linechess.store.v1'})
 
+    const [fetch_opening_line, set_fetch_opening_line] = createSignal(false, { equals: false })
     const selected_opening_list = createAsync(async () => {
+        fetch_opening_line()
         if (!store.selected_opening_list_id) {
             return undefined
         }
 
         return await get_db()?.[0].get_opening_list_by_id(store.selected_opening_list_id)
     })
+
+
+    const selected_opening_line = createAsync(async () => {
+        if (!store.selected_opening_line_id) {
+            return undefined
+        }
+
+        return await get_db()?.[0].get_opening_line_by_id(store.selected_opening_line_id)
+    })
+
+
 
     const [fetch_lists, set_fetch_lists] = createSignal(false, { equals: false })
     const opening_lists = createAsync(async () => {
@@ -70,7 +93,16 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
         },
         get is_create_new_opening_modal_open() {
             return store.is_create_new_opening_modal_open
-        }
+        },
+        get is_add_new_line_modal_open() {
+            return store.is_add_new_line_modal_open
+        },
+        get selected_opening_line_id() {
+            return store.selected_opening_line_id
+        },
+        get selected_opening_line() {
+            return selected_opening_line()
+        },
     }
 
     let actions = {
@@ -82,6 +114,11 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
         set_open_create_new_opening(v: boolean) {
             set_store({
                 is_create_new_opening_modal_open: v
+            })
+        },
+        set_open_add_new_line(v: boolean) {
+            set_store({
+                is_add_new_line_modal_open: v
             })
         },
         async create_opening_list(name: string) {
@@ -105,7 +142,23 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
             set_store({
                 selected_opening_list_id: next_id
             })
-        }
+        },
+        select_opening_line(id: OpeningLineId) {
+            set_store({
+                selected_opening_line_id: id
+            })
+        },
+        async create_opening_line(name: string, pgn: string) {
+            let selected_opening_line_id = state.selected_opening_list_id
+            if (!selected_opening_line_id) {
+                return undefined
+            }
+
+            let res = await get_db()?.[1].create_opening_line(selected_opening_line_id, name, pgn)
+
+            set_fetch_opening_line(true)
+            return res
+        },
     }
 
     return [state, actions]

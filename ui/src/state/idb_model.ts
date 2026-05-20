@@ -1,5 +1,5 @@
 import { make_database, type DatabaseActions } from "./idb"
-import type { OpeningList, OpeningListId } from "./types"
+import type { OpeningLineId, OpeningList, OpeningListId } from "./types"
 
 export type LightOpeningListModel = OpeningList
 
@@ -18,6 +18,7 @@ export type OpeningLineModel = {
 export type Idb_Model_State = {
     get_opening_lists(): Promise<LightOpeningListModel[]>
     get_opening_list_by_id(id: OpeningListId): Promise<OpeningListModel | undefined>
+    get_opening_line_by_id(id: OpeningLineId): Promise<OpeningLineModel | undefined>
 }
 
 export type Idb_Store = [Idb_Model_State, DatabaseActions]
@@ -46,6 +47,11 @@ export async function make_idb_model(): Promise<Idb_Store> {
             }
 
             return res
+        },
+        async get_opening_line_by_id(id: OpeningLineId) {
+            let line = await db_state.get_opening_line_by_id(id)
+
+            return line
         }
     }
     

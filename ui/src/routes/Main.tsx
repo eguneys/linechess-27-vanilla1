@@ -64,6 +64,9 @@ function RepertoireContent() {
       <Show when={state.is_create_new_opening_modal_open}>
         <CreateNewOpeningDialog />
       </Show>
+      <Show when={state.is_add_new_line_modal_open}>
+        <AddNewLineOpeningDialog />
+      </Show>
     </div>
   </>)
 }
@@ -71,20 +74,22 @@ function RepertoireContent() {
 function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
 
 
-  const [, { linechess_actions: {delete_opening_list} }] = useState()
+  const [{ linechess_state: state }, { linechess_actions: {delete_opening_list, set_open_add_new_line, select_opening_line } }] = useState()
 
   const delete_this_opening_list = () => {
     delete_opening_list(props.list.id)
   }
 
+  const is_selected_line = createSelector(() => state.selected_opening_line_id)
+
   return (<>
     <div class='opening-lines-view'>
       <div class='header'>
         <span class='title'>{props.list.name}</span>
-        <button class='primary'>+ Add new Line</button>
+        <button onClick={() => set_open_add_new_line(true)} class='primary'>+ Add new Line</button>
       </div>
       <div class='body'>
-      <For each={props.list.lines} fallback={
+      <Show when={props.list.lines.length > 0} fallback={
         <div class='no-lines'>
           <div class='circle'></div>
           No Lines listed
@@ -92,10 +97,21 @@ function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
             Add an opening line to get started
           </p>
         </div>
-      }>{() =>
-        <div class='lines'>
-        </div>
-        }</For>
+      }>{
+            <div class='lines'>
+              <div class='list'>
+                <For each={props.list.lines}>{line =>
+                  <div onClick={() => select_opening_line(line.id)} class='line' classList={{active: is_selected_line(line.id)}}>{line.name}</div>
+                }</For>
+              </div>
+              <div class='info'>
+                Information
+                <Show when={state.selected_opening_line}>{ line =>
+                  {line().name}
+                }</Show>
+              </div>
+            </div>
+        }</Show>
       </div>
       <div class='footer'>
         <button onClick={delete_this_opening_list} class='delete'>Delete opening list</button>
@@ -104,6 +120,75 @@ function OpeningListViewOnPanel(props: {list: OpeningListModel}) {
     </div>
   </>)
 }
+
+
+function AddNewLineOpeningDialog() {
+
+  const [{ linechess_state: state }, { linechess_actions: { set_open_add_new_line, select_opening_line, create_opening_line }}] = useState()
+
+  const close = () => set_open_add_new_line(false)
+
+  const add_new_opening_line = async () => {
+
+    if (!$opening_line_name_text.checkValidity()) {
+      $opening_line_name_text.reportValidity()
+      return
+    }
+    let value = $opening_line_name_text.value
+
+    if (!$opening_line_pgn_text.checkValidity()) {
+      $opening_line_pgn_text.reportValidity()
+      return
+    }
+    let pgn_value = $opening_line_pgn_text.value
+
+
+    let id = await create_opening_line(value, pgn_value)
+    if (id !== undefined) {
+      select_opening_line(id)
+    }
+    close()
+  }
+
+  const paste_pgn = () => {
+    navigator.clipboard.readText().then(text => {
+      $opening_line_pgn_text.value = text
+    })
+  }
+
+  let $opening_line_name_text!: HTMLInputElement
+  let $opening_line_pgn_text!: HTMLInputElement
+
+  return (<>
+    <dialog open={state.is_add_new_line_modal_open}>
+      <div onClick={close} class='dialog-backdrop'></div>
+      <div class='create-new-opening-dialog-content'>
+        <div class='panel'>
+          <div class='body'>
+            <div class='title'>Add New Opening Line</div>
+
+            <div class='input-group'>
+               <label for="opening_line_name">Opening Line Name</label>
+               <input minLength={3} required={true} ref={$opening_line_name_text} id="opening_line_name" type='text' placeholder="Enter Line Name..."></input>
+            </div>
+
+            <div class='input-group'>
+               <label for="opening_line_pgn">Opening Line PGN</label>
+               <input minLength={8} required={true} ref={$opening_line_pgn_text} id="opening_line_pgn" type='text' placeholder="Enter Line PGN..."></input>
+              <button onClick={paste_pgn} class='secondary'>Paste PGN</button>
+            </div>
+          </div>
+          <div class='action'>
+            <button type="submit" onClick={add_new_opening_line} class='primary'>Add New Line</button>
+            <button onClick={close} class='secondary'>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+  </>)
+}
+
+
 
 function CreateNewOpeningDialog() {
 

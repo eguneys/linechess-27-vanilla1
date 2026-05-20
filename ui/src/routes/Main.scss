@@ -364,7 +364,9 @@ main {
                     display: flex;
                     padding: variables.$s1 variables.$m1;
 
-                    background: variables.$black1;
+                    background: variables.$cyan5;
+                    border-bottom: variables.$px solid variables.$black2;
+                    color: variables.$cyan-1;
 
                     button {
                         flex-shrink: 0;
@@ -385,13 +387,14 @@ main {
                     display: flex;
                     justify-content: space-between;
                     border-top: variables.$px solid variables.$black2;
+                    background: variables.$black075;
 
                     .delete {
                         margin: variables.$s1;
 
                         @include variables.rounded;
                         border: none;
-                        background: variables.$red15;
+                        background: variables.$red175;
                         color: variables.$white2;
                         cursor: pointer;
 
@@ -436,6 +439,58 @@ main {
                         }
                     }
             
+                }
+            }
+
+
+            .opening-lines-view {
+
+                .body {
+                    display: flex;
+                    flex-flow: column;
+
+                    .lines {
+                        flex: 1;
+                        display: flex;
+                        background: variables.$black05;
+
+                        .info {
+                            flex: 4;
+                        }
+
+                        .list {
+                            flex: 3;
+
+                            height: 20em;
+                        }
+
+                        .list {
+                            display: flex;
+                            flex-flow: column;
+                            overflow-y: auto;
+                            border-right: variables.$px solid variables.$black15;
+
+                            .line {
+                                cursor: pointer;
+
+                                padding: variables.$s1;
+                                    background: variables.$cyan46;
+                                &:nth-child(even) {
+                                    background: variables.$cyan475;
+                                }
+
+                                &:hover:not(.active) {
+                                    color: variables.$cyan-1;
+                                    background: variables.$cyan35;
+                                }
+
+                                &.active {
+                                    color: variables.$black0;
+                                    background: variables.$cyan-2;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
