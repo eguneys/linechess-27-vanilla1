@@ -249,6 +249,10 @@ function AddNewLineOpeningDialog() {
         <div class='panel'>
           <div class='body'>
             <div class='title'>Add New Opening Line</div>
+            <div class='input-group'>
+              <label>to list</label>
+              <p class='list-name'>{state.selected_opening_list!.name}</p>
+            </div>
 
             <div class='input-group'>
                <label for="opening_line_name">Opening Line Name</label>
@@ -327,6 +331,9 @@ function CreateNewOpeningDialog() {
 }
 
 function DashboardContent() {
+
+  const [,{ linechess_actions: { set_dashboard_tab }}] = useState()
+
   return (<>
     <div class='dc-dashboard'>
       <div class='info-action'>
@@ -334,7 +341,7 @@ function DashboardContent() {
           <h2>Opening Performance</h2>
           <p>Breakdown of the opening lines played in recent matches</p>
         </div>
-        <button class='import-pgn-btn primary'>Import PGN</button>
+        <button onClick={() => set_dashboard_tab('repertoire')}class='import-pgn-btn primary'>Import PGN</button>
       </div>
       <RecentMatches/>
     </div>

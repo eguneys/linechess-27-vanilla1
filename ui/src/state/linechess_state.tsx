@@ -47,7 +47,7 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
     let [store, set_store] = makePersisted(createStore<LinechessPersistedStore>({
         is_create_new_opening_modal_open: false,
         is_add_new_line_modal_open: false,
-        dashboard_tab: 'dashboard',
+        dashboard_tab: 'repertoire',
         selected_opening_list_id: undefined,
         selected_opening_line_id: undefined,
     }), { name: '.linechess.store.v1'})

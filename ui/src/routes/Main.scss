@@ -638,6 +638,10 @@
                     color: variables.$cyan-1;
                 }
 
+                .list-name {
+                    color: variables.$cyan1;
+                }
+
                 .input-group {
                     display: flex;
                     flex-flow: column;
@@ -648,6 +652,7 @@
                         color: variables.$cyan1;
                         font-size: variables.$m15;
                         text-transform: uppercase;
+                        line-height: variables.$m2;
                     }
 
                     .error {
