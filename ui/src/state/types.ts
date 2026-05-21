@@ -75,7 +75,6 @@ export type LichessSearchHandle = {
     nb_rapid: number
     nb_classical: number
     recent_matches: RecentMatch[]
-    recent_matches_done_since?: number
     is_fetching_recent_games: boolean
 }
 

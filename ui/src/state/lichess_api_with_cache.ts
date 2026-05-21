@@ -59,7 +59,6 @@ export function make_lichess_search_handle_computer(get_db: AccessorWithLatest<I
     }
     let actions = {
         finish_games() {
-            set_store('recent_matches_done_since', Date.now())
             set_store('is_fetching_recent_games', false)
             let db = get_db()
 
@@ -168,14 +167,13 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
                     nb_classical: 0,
                     username,
                     recent_matches: [],
-                    recent_matches_done_since: undefined,
                     is_fetching_recent_games: true
                 }
             }
 
             set_pc.set_username(search_handle)
 
-            let since = search_handle.recent_matches_done_since ?? YesterdayMs()
+            let since = search_handle.recent_matches[0]?.game_created_at ?? YesterdayMs()
 
             let { cancel, stream } = $agent.fetch_games(username, since)
 
@@ -256,7 +254,6 @@ export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandl
         nb_classical: new_nb_classical,
         username,
         recent_matches: new_recent_matches,
-        recent_matches_done_since: handle.recent_matches_done_since,
         is_fetching_recent_games: true
     }
 
