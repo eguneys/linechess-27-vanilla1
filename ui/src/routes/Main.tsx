@@ -26,8 +26,6 @@ const TabContents = {
   repertoire: RepertoireContent
 }
 
-// @ts-ignore
-const list = "asdfa,".repeat(30).split(',')
 function RepertoireContent() {
 
   const [{ linechess_state: state }, { linechess_actions: { set_open_create_new_opening, select_opening_list } }] = useState()
@@ -386,13 +384,13 @@ function WelcomeFitnessScore() {
       <div class='welcome'>Hi, <span>{handle().username}</span></div>
       <div class='fitness stats'>
         <div class='stat background-container'>
-          <OpacityBlurShow when={!handle().is_recent_matches_done}/>
+          <OpacityBlurShow when={handle().is_fetching_recent_games}/>
           <div class='title'>Fitness Score</div>
           <div class='value percent'>{format_fitness_score(handle().fitness_score)}</div>
           <ProgressBar percent={handle().fitness_score} />
         </div>
         <div class='stat nb-played background-container'>
-          <OpacityBlurShow when={!handle().is_recent_matches_done}/>
+          <OpacityBlurShow when={handle().is_fetching_recent_games}/>
           <div class='title'>Games Played Today</div>
           <div class='times'>
             <div class='time'>
@@ -602,3 +600,5 @@ export function formatMomentsAgo(timestamp: number): string {
     const years = Math.floor(months / 12)
     return `${years}y ago`
 }
+
+

@@ -31,7 +31,7 @@ export type LichessSearchHandleState = {
     lichess_search_handle: LichessSearchHandle | undefined
 }
 export type LichessSearchHandleActions = {
-    set_username(username?: string): void
+    set_username(search_handle?: LichessSearchHandle): void
     add_recent_games(games: RecentMatch[]): Promise<void>
     finish_games(): void
 }
@@ -49,7 +49,7 @@ export function make_lichess_search_handle_computer(get_db: AccessorWithLatest<I
         nb_rapid: 0,
         nb_classical: 0,
         recent_matches: [],
-        is_recent_matches_done: false
+        is_fetching_recent_games: false
     })
 
     let state = {
@@ -59,7 +59,16 @@ export function make_lichess_search_handle_computer(get_db: AccessorWithLatest<I
     }
     let actions = {
         finish_games() {
-            set_store('is_recent_matches_done', true)
+            set_store('recent_matches_done_since', Date.now())
+            set_store('is_fetching_recent_games', false)
+            let db = get_db()
+
+            if (!db) {
+                return
+            }
+
+            db[1].set_recent_search_handle(store)
+
         },
         async add_recent_games(games: RecentMatch[]) {
             let db = get_db()
@@ -80,19 +89,17 @@ export function make_lichess_search_handle_computer(get_db: AccessorWithLatest<I
             }))
 
         },
-        set_username(username?: string) {
+        set_username(new_store: LichessSearchHandle) {
             set_store(produce(store => {
-                store.username = username ?? ''
-                store.fitness_score = 0
-                store.nb_blitz = 0
-                store.nb_bullet = 0
-                store.nb_rapid = 0
-                store.nb_classical = 0
-                store.recent_matches = []
-                store.is_recent_matches_done = false
+                store.username = new_store.username
+                store.fitness_score = new_store.fitness_score
+                store.nb_blitz = new_store.nb_blitz
+                store.nb_bullet = new_store.nb_bullet
+                store.nb_rapid = new_store.nb_rapid
+                store.nb_classical = new_store.nb_classical
+                store.recent_matches = new_store.recent_matches
+                store.is_fetching_recent_games = new_store.is_fetching_recent_games
             }))
-
-
         }
     }
     return [state, actions]
@@ -149,13 +156,26 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
                 return
             }
 
-            set_pc.set_username(username)
+            let search_handle = await db[0].get_recent_search_handle_by_username_since(handle, YesterdayMs())
 
-            let games = await db[0].get_recent_games_since_for(handle, YesterdayMs())
+            if (!search_handle) {
+                search_handle = {
+                    fitness_score: 0,
+                    nb_played_score: 0,
+                    nb_bullet: 0,
+                    nb_blitz: 0,
+                    nb_rapid: 0,
+                    nb_classical: 0,
+                    username,
+                    recent_matches: [],
+                    recent_matches_done_since: undefined,
+                    is_fetching_recent_games: true
+                }
+            }
 
-            batched_games = games
+            set_pc.set_username(search_handle)
 
-            let since = batched_games[0]?.game_created_at ?? YesterdayMs()
+            let since = search_handle.recent_matches_done_since ?? YesterdayMs()
 
             let { cancel, stream } = $agent.fetch_games(username, since)
 
@@ -225,7 +245,7 @@ export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandl
     let new_nb_blitz = add_nb_speed(nb_blitz, games_to_add, 'blitz')
     let new_nb_rapid = add_nb_speed(nb_rapid, games_to_add, 'rapid')
     let new_nb_classical = add_nb_speed(nb_classical, games_to_add, 'classical')
-    let new_recent_matches = [...games_to_add, ...recent_matches]
+    let new_recent_matches = [...recent_matches, ...games_to_add]
 
     let res: LichessSearchHandle = {
         fitness_score: new_fitness_score,
@@ -236,7 +256,8 @@ export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandl
         nb_classical: new_nb_classical,
         username,
         recent_matches: new_recent_matches,
-        is_recent_matches_done: handle.is_recent_matches_done
+        recent_matches_done_since: handle.recent_matches_done_since,
+        is_fetching_recent_games: true
     }
 
     return res

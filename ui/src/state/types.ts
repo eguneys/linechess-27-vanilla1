@@ -41,18 +41,6 @@ export type LoggedInUser = {
     token: string
 }
 
-export type LichessSearchHandle = {
-    username: string
-    fitness_score: number
-    nb_played_score: number
-    nb_bullet: number
-    nb_blitz: number
-    nb_rapid: number
-    nb_classical: number
-    recent_matches: RecentMatch[]
-    is_recent_matches_done: boolean
-}
-
 export type AllowedSpeed = 'bullet' | 'blitz' | 'rapid' | 'classical'
 export let Allowed_speeds: AllowedSpeed[] = ['bullet', 'blitz', 'rapid', 'classical']
 
@@ -76,3 +64,18 @@ export type RecentMatch = {
     speed: AllowedSpeed
     perf: string
 }
+
+
+export type LichessSearchHandle = {
+    username: string
+    fitness_score: number
+    nb_played_score: number
+    nb_bullet: number
+    nb_blitz: number
+    nb_rapid: number
+    nb_classical: number
+    recent_matches: RecentMatch[]
+    recent_matches_done_since?: number
+    is_fetching_recent_games: boolean
+}
+
