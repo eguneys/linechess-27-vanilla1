@@ -383,14 +383,16 @@ function WelcomeFitnessScore() {
 
   return (<>
     <div class='welcome-fitness'>
-      <div class='welcome'>Welcome <span>{handle().username}</span></div>
+      <div class='welcome'>Hi, <span>{handle().username}</span></div>
       <div class='fitness stats'>
-        <div class='stat'>
+        <div class='stat background-container'>
+          <OpacityBlurShow when={!handle().is_recent_matches_done}/>
           <div class='title'>Fitness Score</div>
           <div class='value percent'>{format_fitness_score(handle().fitness_score)}</div>
-          <ProgressBar percent={handle().fitness_score}/>
+          <ProgressBar percent={handle().fitness_score} />
         </div>
-        <div class='stat nb-played'>
+        <div class='stat nb-played background-container'>
+          <OpacityBlurShow when={!handle().is_recent_matches_done}/>
           <div class='title'>Games Played Today</div>
           <div class='times'>
             <div class='time'>
@@ -414,6 +416,56 @@ function WelcomeFitnessScore() {
         </div>
       </div>
     </div>
+  </>)
+}
+
+function OpacityBlurShow(props: { when: boolean }) {
+
+  const [t, set_t] = createSignal(0)
+
+  const fill_opacity = createMemo(() => {
+     let res = t() * ease_springOut(t())
+     if (!props.when) {
+      return 1 - res
+     } else {
+      return res
+     }
+  })
+
+  const fill_timer_fn = () => {
+    set_t(t() + 0.1)
+    if (t() >= 1) {
+      set_t(1)
+      set_timer_id(-1)
+    } else {
+      set_timer_id(requestAnimationFrame(fill_timer_fn))
+    }
+
+    $el.style.opacity = `${fill_opacity()}`
+  }
+
+  let [timer_id, set_timer_id] = createSignal(0)
+
+  createEffect(() => {
+    props.when
+    set_t(0)
+    set_timer_id(requestAnimationFrame(fill_timer_fn))
+  })
+
+
+  onCleanup(() => {
+    cancelAnimationFrame(timer_id())
+    set_timer_id(requestAnimationFrame(fill_timer_fn))
+  })
+
+  let $el!: HTMLDivElement
+
+  return (<>
+    <Show when={fill_opacity() !== 0}>
+      <div ref={$el} class='calculating-overlay'>
+        <div class="spinner"></div>
+      </div>
+    </Show>
   </>)
 }
 

@@ -4,7 +4,6 @@ import { createStore } from "solid-js/store"
 import type { Idb_Store } from "./idb_model"
 import { createAsync, type AccessorWithLatest } from "@solidjs/router"
 import { make_lichess_api_with_cache } from "./lichess_api_with_cache"
-import { untrack } from "solid-js"
 
 export type DashboardState = {
     logged_in_user: LoggedInUser | undefined
@@ -31,16 +30,9 @@ export function make_dashboard(get_db: AccessorWithLatest<Idb_Store | undefined>
         search_handle: ''
     }), { name: '.linechess.dashboardstore.v1'})
 
-    const [lichess_api_with_cache, { set_search_handle }] = make_lichess_api_with_cache(get_db)
+    const [, { set_search_handle }] = make_lichess_api_with_cache(get_db)
 
-    const search_handle = createAsync(async () => {
-        lichess_api_with_cache.sync_on_pushed_more_recent_games
-        let existing_username = lichess_api_with_cache.fetch_most_recent_username
-        if (store.search_handle !== existing_username) {
-            await untrack(() => set_search_handle(store.search_handle))
-        }
-        return untrack(() => lichess_api_with_cache.most_recent_handle)
-    })
+    const search_handle = createAsync(() => set_search_handle(store.search_handle))
 
     let state = {
         get logged_in_user() {

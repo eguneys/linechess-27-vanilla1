@@ -1,161 +1,155 @@
 import type { AccessorWithLatest } from "@solidjs/router"
 import type { Idb_Store } from "./idb_model"
 import { is_allowed_speed, type AllowedSpeed, type LichessSearchHandle, type RecentMatch } from "./types"
-import { batch, createMemo, createSignal } from "solid-js"
 import { create_lichess_agent, type exportGameResponse } from "./lichess_agent"
+import { createStore, produce } from "solid-js/store"
 
 export type LichessApiState = {
-    most_recent_handle: LichessSearchHandle | undefined
-    fetch_most_recent_username: string
-    sync_on_pushed_more_recent_games: boolean
 }
 
 export type LichessApiActions = {
-    set_search_handle(handle: string): Promise<void>
+    set_search_handle(handle: string): Promise<LichessSearchHandle | undefined>
 }
 
 export type LichessApiStore = [LichessApiState, LichessApiActions]
 
 export function make_lichess_api_with_cache(get_db: AccessorWithLatest<Idb_Store | undefined>): LichessApiStore {
 
-    const [sync_on_pushed_more_recent_games, set_sync_on_pushed_more_recent_games] = createSignal(false, { equals: false })
-    const [$lichess_cache, $set_lichess_cache] = make_lichess_cache_agent()
+    const [, $set_lichess_cache] = make_lichess_cache_agent(get_db)
 
-    const [handle, set_handle] = createSignal<LichessSearchHandle | undefined>(undefined)
-
-    const most_recent_username_memo = createMemo(() => handle()?.username ?? '')
-
-    let state: LichessApiState = {
-        get sync_on_pushed_more_recent_games() {
-            return sync_on_pushed_more_recent_games()
-        },
-        get fetch_most_recent_username() {
-            return most_recent_username_memo()
-        },
-        get most_recent_handle() {
-            let username = $lichess_cache.retrieve_most_recent_handle
-
-            if (!username) {
-                $set_lichess_cache.break_fill_handle()
-                set_handle(undefined)
-                return undefined
-            }
-
-            let h = handle()
-
-            let new_handle: LichessSearchHandle = {
-                username,
-                fitness_score: 0,
-                nb_played_score: 0,
-                nb_bullet: 0,
-                nb_blitz: 0,
-                nb_rapid: 0,
-                nb_classical: 0,
-                recent_matches: [],
-            }
-
-
-
-            if (h === undefined) {
-                set_handle(new_handle)
-            } else if (h.username !== username) {
-                set_handle(new_handle)
-                //$set_lichess_cache.break_fill_handle()
-            }
-
-            let db = get_db()
-
-            if (db !== undefined) {
-                let games_to_add = $lichess_cache.recent_games_to_add
-
-                if (games_to_add.length > 0) {
-                    batch(() => {
-                        $set_lichess_cache.reset_recent_games_to_add()
-                        set_handle(add_recent_games(db, handle()!, games_to_add))
-                        set_sync_on_pushed_more_recent_games(true)
-                    })
-                }
-            }
-
-            return handle()
-        }
-    }
 
     let actions = {
         async set_search_handle(handle: string) {
+            return $set_lichess_cache.begin_fill_handle(handle)
+        }
+    }
+
+    return [{}, actions]
+}
+
+export type LichessSearchHandleState = {
+    lichess_search_handle: LichessSearchHandle | undefined
+}
+export type LichessSearchHandleActions = {
+    set_username(username?: string): void
+    add_recent_games(games: RecentMatch[]): Promise<void>
+    finish_games(): void
+}
+
+export type LichessSearchHandleComputer = [LichessSearchHandleState, LichessSearchHandleActions]
+
+export function make_lichess_search_handle_computer(get_db: AccessorWithLatest<Idb_Store | undefined>): LichessSearchHandleComputer {
+
+    let [store, set_store] = createStore<LichessSearchHandle>({
+        username: '',
+        fitness_score: 0,
+        nb_played_score: 0,
+        nb_bullet: 0,
+        nb_blitz: 0,
+        nb_rapid: 0,
+        nb_classical: 0,
+        recent_matches: [],
+        is_recent_matches_done: false
+    })
+
+    let state = {
+        get lichess_search_handle() {
+            return store?.username === '' ? undefined : store
+        }
+    }
+    let actions = {
+        finish_games() {
+            set_store('is_recent_matches_done', true)
+        },
+        async add_recent_games(games: RecentMatch[]) {
             let db = get_db()
+
             if (!db) {
                 return
             }
 
-            $set_lichess_cache.begin_fill_handle(db, handle)
+            let new_store = await add_recent_games(db, store, games)
+
+            set_store(produce(store => {
+                store.fitness_score = new_store.fitness_score
+                store.nb_blitz = new_store.nb_blitz
+                store.nb_bullet = new_store.nb_bullet
+                store.nb_rapid = new_store.nb_rapid
+                store.nb_classical = new_store.nb_classical
+                store.recent_matches = new_store.recent_matches
+            }))
+
+        },
+        set_username(username?: string) {
+            set_store(produce(store => {
+                store.username = username ?? ''
+                store.fitness_score = 0
+                store.nb_blitz = 0
+                store.nb_bullet = 0
+                store.nb_rapid = 0
+                store.nb_classical = 0
+                store.recent_matches = []
+                store.is_recent_matches_done = false
+            }))
+
+
         }
     }
-
     return [state, actions]
 }
 
-export type LichessCacheAgentState = {
-    recent_games_to_add: RecentMatch[]
-    retrieve_most_recent_handle: string
-}
+export type LichessCacheAgentState = {}
 
 export type LichessCacheAgentActions = {
-    begin_fill_handle(db: Idb_Store, handle: string): Promise<void>
-    break_fill_handle(): Promise<void>
-    reset_recent_games_to_add(): void
+    begin_fill_handle(handle: string): Promise<LichessSearchHandle | undefined>
 }
 
 export type LichessCacheAgentStore = [LichessCacheAgentState, LichessCacheAgentActions]
 
-function make_lichess_cache_agent(): LichessCacheAgentStore {
+function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefined>): LichessCacheAgentStore {
 
     let $agent = create_lichess_agent()
 
-    const [most_recent_handle, set_most_recent_handle] = createSignal('', { equals: false })
+    const [pc, set_pc] = make_lichess_search_handle_computer(get_db)
 
-    let [recent_matches, set_recent_matches] = createSignal<RecentMatch[]>([])
     let batched_games: RecentMatch[]
     let cancel_running_stream: () => void = () => {}
 
-    function flushGames(games: RecentMatch[]) {
+    async function flushGames(games: RecentMatch[]) {
         if (games.length > 0) {
-            set_recent_matches(prev => [...prev, ...games])
+            return await set_pc.add_recent_games(games)
         }
     }
 
-    let state = {
-        get recent_games_to_add() {
-            let res = recent_matches()
-            return res
-        },
-        get retrieve_most_recent_handle() {
-            return most_recent_handle()
-        }
+    const break_fill_handle = () => {
+        cancel_running_stream()
+        batched_games = []
     }
 
     let actions = {
-        reset_recent_games_to_add() {
-            set_recent_matches([])
-            batched_games = []
-        },
-        async begin_fill_handle(db: Idb_Store, handle: string) {
-            cancel_running_stream()
-            batched_games = []
+        async begin_fill_handle(handle: string) {
+
+            let db = get_db()
+
+            if (!db) {
+                return undefined
+            }
+
+            break_fill_handle()
 
             if (handle.length < 3) {
-                set_most_recent_handle('')
+                set_pc.set_username(undefined)
                 return
             }
 
             let username = await $agent.fetch_username(handle)
 
             if (!username) {
-                set_most_recent_handle('')
+                set_pc.set_username(undefined)
                 return
             }
 
-            set_most_recent_handle(username)
+            set_pc.set_username(username)
 
             let games = await db[0].get_recent_games_since_for(handle, YesterdayMs())
 
@@ -192,19 +186,18 @@ function make_lichess_cache_agent(): LichessCacheAgentStore {
             if (batched_games.length > 0) {
                 flushGames(batched_games)
                 batched_games = []
+                set_pc.finish_games()
             }
-        },
-        async break_fill_handle() {
-            cancel_running_stream()
-            batched_games = []
+
+            return pc.lichess_search_handle
         }
     }
 
-    return [state, actions]
+    return [{}, actions]
 }
 
 
-function add_recent_games(db: Idb_Store, handle: LichessSearchHandle, games_to_add: RecentMatch[]): LichessSearchHandle {
+export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandle, games_to_add: RecentMatch[]): Promise<LichessSearchHandle> {
 
     const add_fitness_score = (_db: Idb_Store, _fitness_score: number, _games_to_add: RecentMatch[]) => {
         return 0
@@ -242,7 +235,8 @@ function add_recent_games(db: Idb_Store, handle: LichessSearchHandle, games_to_a
         nb_rapid: new_nb_rapid,
         nb_classical: new_nb_classical,
         username,
-        recent_matches: new_recent_matches
+        recent_matches: new_recent_matches,
+        is_recent_matches_done: handle.is_recent_matches_done
     }
 
     return res

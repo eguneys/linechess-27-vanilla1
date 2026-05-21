@@ -50,6 +50,7 @@ export type LichessSearchHandle = {
     nb_rapid: number
     nb_classical: number
     recent_matches: RecentMatch[]
+    is_recent_matches_done: boolean
 }
 
 export type AllowedSpeed = 'bullet' | 'blitz' | 'rapid' | 'classical'
