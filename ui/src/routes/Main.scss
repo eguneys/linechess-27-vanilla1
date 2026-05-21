@@ -55,9 +55,9 @@
         display: grid;
 
         grid-template-areas: 'info'
+                             'breakdown'
+                             'welcome'
                              'list';
-
-        gap: variables.$s3;
 
         .info-action {
             grid-area: info;
@@ -65,6 +65,14 @@
 
         .matches-list {
             grid-area: list;
+        }
+
+        .breakdown {
+            grid-area: breakdown;
+        }
+
+        .welcome-fitness {
+            grid-area: welcome;
         }
     }
 
@@ -75,11 +83,10 @@
 
             display: flex;
             flex-flow: column;
-            justify-content: space-between;
-
 
             @include variables.respond-to("sm") {
                 flex-flow: row;
+                justify-content: space-between;
             }
 
             p {
@@ -92,6 +99,38 @@
             }
         }
 
+        .breakdown {
+            background: variables.$black125;
+            padding: variables.$s1;
+            display: flex;
+            flex-flow: column;
+
+
+            @include variables.respond-to("sm") {
+                flex-flow: row;
+                justify-content: flex-end;
+            }
+
+            button.primary {
+                border-radius: variables.$s0 0 0 variables.$s0;
+                z-index: 1;
+            }
+
+            .needs-search {
+                box-shadow: 0 0 2px 1px variables.$cyan-2;
+                animation: needs-search 3s infinite;
+            }
+
+            input.search {
+                width: clamp(150px, 100%, 800px);
+                border-radius: 0 variables.$s0 variables.$s0 0;
+
+            }
+        }
+
+        &>.needs-search {
+           background: variables.$black05;
+        }
 
         .matches-list {
             @include variables.rounded;
@@ -150,6 +189,11 @@
                     align-items: start;
 
                     .situation {
+                        .type {
+                            .speed {
+                                text-transform: capitalize;
+                            }
+                        }
                         .time {
                             font-size: variables.$s2;
                             color: variables.$cyan3;
@@ -201,6 +245,74 @@
     
     
                         }
+                    }
+                }
+            }
+        }
+    }
+
+
+    .dc-dashboard {
+        .welcome-fitness {
+            border-radius: variables.$s0;
+            border: variables.$px solid variables.$black2;
+            background: variables.$black1;
+
+            display: flex;
+            flex-flow: column;
+
+            .welcome {
+                align-self: center;
+                padding: variables.$s0;
+                color: variables.$cyan1;
+                font-size: variables.$m3;
+
+                span {
+                   color: variables.$cyan-2;
+                }
+            }
+
+            .fitness.stats {
+
+
+                .nb-played {
+                    .times {
+                        display: flex;
+                        gap: variables.$s2;
+                        
+                        .time {
+
+                            .sub {
+                                color: variables.$cyan1;
+                            }
+
+                            .value {
+                                &.zero {
+                                    color: variables.$cyan-4;
+                                }
+                            }
+
+                            display: flex;
+                            align-items: center;
+                            gap: variables.$s1;
+                        }
+                    }
+                }
+
+                .stat {
+                    display: flex;
+                    flex-flow: column;
+                    align-items: center;
+                    .title {
+                        font-size: variables.$m2;
+                    }
+
+                    .value {
+                        font-size: variables.$l0;
+                    }
+
+                    .progress-bar {
+                        height: variables.$l0;
                     }
                 }
             }
@@ -570,7 +682,6 @@
         }
 
         .stat {
-            height: 4.5em;
             flex: 1;
             padding: variables.$s2;
             border: variables.$px solid variables.$black3;
@@ -676,4 +787,51 @@
             }
         }
     }
+}
+
+
+.main-dashboard-tabs {
+    .login {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: center;
+        @include variables.rounded;
+        padding: variables.$m2;
+        gap: variables.$s2;
+
+        p {
+            color: variables.$cyan1;
+        }
+    }
+}
+
+.main-dashboard-tabs {
+    .no-content {
+                padding: 1em;
+                display: flex;
+                flex-flow: column;
+            
+                justify-content: center;
+                align-items: center;
+            
+                text-transform: uppercase;
+                color: variables.$white0;
+            
+                p {
+                    font-size: variables.$s3;
+                    color: variables.$cyan1;
+                    text-align: center;
+                }
+            
+                .circle {
+                    aspect-ratio: 1;
+                    width: variables.$m3;
+                    border-radius: 50%;
+                    background: variables.$cyan-25;
+                    opacity: .1;
+                }
+            }
+            
+
 }

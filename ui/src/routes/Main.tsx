@@ -261,7 +261,7 @@ function AddNewLineOpeningDialog() {
 
             <div class='input-group'>
                <label for="opening_line_pgn">Opening Line PGN</label>
-               <input aria-invalid={!!pgn_error()} minLength={8} required={true} ref={$opening_line_pgn_text} id="opening_line_pgn" type='text' placeholder="Enter Line PGN..."></input>
+               <input spellcheck="false" autocorrect="off" aria-invalid={!!pgn_error()} minLength={8} required={true} ref={$opening_line_pgn_text} id="opening_line_pgn" type='text' placeholder="Enter Line PGN..."></input>
                <Show when={pgn_error()}>{error =>
                 <div class='error'>{error()}</div>
               }</Show>
@@ -332,7 +332,13 @@ function CreateNewOpeningDialog() {
 
 function DashboardContent() {
 
-  const [,{ linechess_actions: { set_dashboard_tab }}] = useState()
+  const [{ dashboard_state: state },{ linechess_actions: { set_dashboard_tab }, dashboard_actions: { set_search_handle }}] = useState()
+
+  let $search_handle!: HTMLInputElement
+
+  const on_set_search_handle = () => {
+    set_search_handle($search_handle.value)
+  }
 
   return (<>
     <div class='dc-dashboard'>
@@ -341,31 +347,132 @@ function DashboardContent() {
           <h2>Opening Performance</h2>
           <p>Breakdown of the opening lines played in recent matches</p>
         </div>
-        <button onClick={() => set_dashboard_tab('repertoire')}class='import-pgn-btn primary'>Import PGN</button>
+        <button onClick={() => set_dashboard_tab('repertoire')} class='import-pgn-btn primary'>Import PGN</button>
       </div>
-      <RecentMatches/>
+
+      <div class="breakdown">
+        <button onClick={on_set_search_handle} class='primary' classList={{'needs-search': state.search_handle_name === '' }}>Search</button>
+        <input spellcheck="false" autocorrect="off" onChange={on_set_search_handle} ref={$search_handle} class='search' type='text' placeholder="Enter Lichess handle..."/>
+      </div>
+      <Show when={state.search_handle} fallback={
+        <NeedsSearch/>
+      }>
+        <WelcomeFitnessScore/>
+        <RecentMatches />
+      </Show>
     </div>
   </>)
 }
 
+function NeedsSearch() {
+  return (<>
+    <div class='no-content needs-search'>
+      <div class='circle'></div>
+      <p class='info'>
+        Search for a player to display performance
+      </p>
+    </div>
+  </>)
+}
+
+function WelcomeFitnessScore() {
+
+  const [{ dashboard_state: state }] = useState()
+
+  const handle = createMemo(() => state.search_handle!)
+
+  return (<>
+    <div class='welcome-fitness'>
+      <div class='welcome'>Welcome <span>{handle().username}</span></div>
+      <div class='fitness stats'>
+        <div class='stat'>
+          <div class='title'>Fitness Score</div>
+          <div class='value percent'>{format_fitness_score(handle().fitness_score)}</div>
+          <ProgressBar percent={handle().fitness_score}/>
+        </div>
+        <div class='stat nb-played'>
+          <div class='title'>Games Played Today</div>
+          <div class='times'>
+            <div class='time'>
+              <div class='sub'>Bullet</div>
+              <div class='value percent'>{format_zero(handle().nb_bullet, 2)}</div>
+            </div>
+            <div class='time'>
+              <div class='sub'>Blitz</div>
+              <div class='value percent'>{format_zero(handle().nb_blitz, 2)}</div>
+            </div>
+            <div class='time'>
+              <div class='sub'>Rapid</div>
+              <div class='value percent'>{format_zero(handle().nb_rapid)}</div>
+            </div>
+            <div class='time'>
+              <div class='sub'>Classical</div>
+              <div class='value percent'>{format_zero(handle().nb_classical)}</div>
+            </div>
+          </div>
+          <ProgressBar percent={handle().nb_played_score} />
+        </div>
+      </div>
+    </div>
+  </>)
+}
+
+export function DashboardWithLoginExtra() {
+  const [{ dashboard_state: dashboard },] = useState()
+  return (<>
+    <Show when={dashboard.logged_in_user} fallback={
+      <LoginWithLichess />
+    }>{
+        <>
+          <WelcomeLoggedIn />
+          <RecentMatches />
+        </>
+      }</Show>
+  </>)
+}
+function WelcomeLoggedIn() {
+  return (<>
+  <div class='welcome'>
+    Welcome heroku
+  </div>
+  </>)
+}
+function LoginWithLichess() {
+  return (<>
+    <div class='login'>
+      <button onClick={() => {}} class='primary'>Login with Lichess</button>
+      <p>To see how you performed on your recent matches with your saved opening lines</p>
+    </div>
+  </>)
+
+}
+
 function RecentMatches() {
 
-  const diverge = () => false
-  const list = 'alkdsjadadf,'.repeat(30).split(',')
+  const [{ dashboard_state: state }] = useState()
+
   return (<>
   <div class='matches-list'>
-    <For each={list}>{ () => 
+    <For each={state.search_handle?.recent_matches} fallback={
+      <div class='no-match no-content'>
+          <div class='circle'></div>
+          No Recent Matches played
+          <p class='info'>
+            Play some games with this player to display performance
+          </p>
+        </div>
+    }>{ item => 
       <div class='match'>
         <div class='board'>
         </div>
         <div class='info'>
             <div class='situation'>
-              <div class='type'>Blitz · Rated</div>
-              <div class='time'>2 days ago</div>
+              <div class='type'><span class='speed'>{item.speed}</span> · {item.is_rated?'Rated':'Unrated'}</div>
+              <div class='time'>{formatMomentsAgo(item.game_created_at)}</div>
             </div>
             <div class='vs'>
-              <div class='players'>heroku vs yifan</div>
-              <Show when={diverge()} fallback={
+              <div class='players'>{item.white} vs {item.black}</div>
+              <Show when={item.opening_diverge} fallback={
                 <A href='https://lichess.org'>Analyse on Lichess</A>
               }>{ _diverge =>
                 <div class='diverge'>
@@ -377,7 +484,7 @@ function RecentMatches() {
               <div class='outcome'>You won!</div>
             </div>
             <div class='opening'>
-              <Show when={diverge()} fallback={
+              <Show when={item.opening_diverge} fallback={
                 <div class='nomatch'>No opening matched</div>
               }>
                 <div class='name'>Queen's Gambit Declined · <span class='variation'>Advanced Variation</span></div>
@@ -411,4 +518,35 @@ export default Main
 
 export function ply_to_display(ply: number) {
     return (ply % 2 === 1) ? `${Math.ceil(ply / 2)}.` : ''
+}
+
+export function format_fitness_score(value: number) {
+  return value ? `${value.toFixed(2)}%` : '--.--'
+}
+
+export function format_zero(value: number, repeat = 1) {
+  return value ? value : '-'.repeat(repeat)
+}
+
+
+export function formatMomentsAgo(timestamp: number): string {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000)
+
+    if (seconds < 1) return "just now"
+    if (seconds < 60) return `${seconds}s ago`
+
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+
+    const days = Math.floor(hours / 24)
+    if (days < 30) return `${days}d ago`
+
+    const months = Math.floor(days / 30)
+    if (months < 12) return `${months}mo ago`
+
+    const years = Math.floor(months / 12)
+    return `${years}y ago`
 }

@@ -93,6 +93,7 @@ a {
         padding: variables.$l0;
         background: variables.$black05;
         color: variables.$black4;
+        border-top: variables.$px solid variables.$black1;
     }
 }
 
@@ -139,6 +140,17 @@ main {
         transform: scale(1.1) rotate(6deg);
     }
 }
+
+
+@keyframes needs-search {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .82;
+    }
+}
+
 
 
 main {

@@ -1,6 +1,6 @@
 import { parse_mainline_ucis_from_pgn } from "./chess_parser"
 import { make_database, type DatabaseActions } from "./idb"
-import { gen_id, type OpeningLineId, type OpeningList, type OpeningListId, type SingleLineMove } from "./types"
+import { gen_id, type OpeningDiverge, type OpeningLineId, type OpeningList, type OpeningListId, type RecentMatch, type SingleLineMove } from "./types"
 
 export type LightOpeningListModel = OpeningList
 
@@ -29,6 +29,8 @@ export type Idb_Model_State = {
     get_opening_lists(): Promise<LightOpeningListModel[]>
     get_opening_list_by_id(id: OpeningListId): Promise<OpeningListModel | undefined>
     get_opening_line_by_id(id: OpeningLineId): Promise<OpeningLineModel | undefined>
+    get_opening_diverge_for_moves(moves: string): Promise<OpeningDiverge>
+    get_recent_games_since_for(handle: string, since: number): Promise<RecentMatch[]>
 }
 
 export type Idb_Model_Actions = {
@@ -81,6 +83,16 @@ export async function make_idb_model(): Promise<Idb_Store> {
                 pgn: line.pgn,
                 moves
             }
+        },
+        async get_opening_diverge_for_moves(moves: string) {
+            let res!: OpeningDiverge
+
+            return res
+        },
+        async get_recent_games_since_for(handle: string, since: number): Promise<RecentMatch[]> {
+            let res: RecentMatch[] = []
+
+            return res
         }
     }
 
