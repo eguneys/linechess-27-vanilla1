@@ -93,9 +93,9 @@ export async function make_idb_model(): Promise<Idb_Store> {
             return res
         },
         async get_recent_search_handle_by_username_since(username: string, since: number): Promise<LichessSearchHandle | undefined> {
-            console.log('since', since)
             let res: LichessSearchHandle = {
                 username,
+                handle: username.toLowerCase(),
                 fitness_score: 0,
                 nb_played_score: 0,
                 nb_bullet: 0,
@@ -105,6 +105,7 @@ export async function make_idb_model(): Promise<Idb_Store> {
                 recent_matches: [],
                 is_fetching_recent_games: true
             }
+            since;
 
             return res
         }

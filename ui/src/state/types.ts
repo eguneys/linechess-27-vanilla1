@@ -67,6 +67,7 @@ export type RecentMatch = {
 
 
 export type LichessSearchHandle = {
+    handle: string
     username: string
     fitness_score: number
     nb_played_score: number
@@ -77,4 +78,3 @@ export type LichessSearchHandle = {
     recent_matches: RecentMatch[]
     is_fetching_recent_games: boolean
 }
-
