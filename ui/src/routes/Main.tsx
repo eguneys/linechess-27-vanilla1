@@ -141,21 +141,28 @@ function PgnLine(props: { line: SingleLineMove[] }) {
           }</For>
         </div>
       </div>
-      <div class='stats'>
-        <div class='accuracy-rate stat'>
-          <div class='title'>Accuracy Score</div>
-          <div class='value percent'>0.0%</div>
-          <ProgressBar percent={50}/>
-        </div>
-        <div class='win-rate stat'>
-          <div class='title'>Overall Win Rate</div>
-          <div class='value percent'>0.0%</div>
-          <ProgressBar percent={50}/>
-        </div>
-        <div class='nb-games stat'>
-          <div class='title'>Total Games Played</div>
-          <div class='value'>0</div>
-        </div>
+
+    </div>
+  </>)
+}
+
+export function LineStatistics() {
+
+  return (<>
+    <div class='stats'>
+      <div class='accuracy-rate stat'>
+        <div class='title'>Accuracy Score</div>
+        <div class='value percent'>0.0%</div>
+        <ProgressBar percent={50} />
+      </div>
+      <div class='win-rate stat'>
+        <div class='title'>Overall Win Rate</div>
+        <div class='value percent'>0.0%</div>
+        <ProgressBar percent={50} />
+      </div>
+      <div class='nb-games stat'>
+        <div class='title'>Total Games Played</div>
+        <div class='value'>0</div>
       </div>
     </div>
   </>)
