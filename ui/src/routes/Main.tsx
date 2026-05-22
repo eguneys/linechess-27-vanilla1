@@ -559,12 +559,11 @@ function RecentMatches() {
       linechess_actions.select_opening_list(list_id)
       linechess_actions.select_opening_line(line_id)
 
-
-      linechess_actions.set_dashboard_tab('repertoire')
-      window.scrollTo({ top: 0 })
-
-      linechess_actions.set_open_add_new_line(true, moves.slice(0, 20).join(' '))
     }
+
+    linechess_actions.set_open_add_new_line(true, moves.slice(0, 20).join(' '))
+    linechess_actions.set_dashboard_tab('repertoire')
+    window.scrollTo({ top: 0 })
   }
 
   return (<>

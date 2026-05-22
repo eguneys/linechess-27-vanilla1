@@ -1,3 +1,4 @@
 - [ ] Tag and suggest recently searched user names
 - [ ] Auto suggest opening names from Pasted PGN
 - [ ] Show chess board to display lines
+- [ ] Make sure to carefully handle deletions
