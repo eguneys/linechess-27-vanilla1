@@ -3,7 +3,7 @@ import './App.scss'
 import { LinechessProvider } from './state/State'
 import { A, Route, Router } from '@solidjs/router'
 
-const Main = lazy(() => import('./routes/Main'))
+import { DashboardPage, RepertoirePage } from './routes/Main'
 const About = lazy(() => import('./routes/About'))
 const Legal = lazy(() => import('./routes/Legal'))
 const NotFound = lazy(() => import('./routes/NotFound'))
@@ -44,7 +44,8 @@ function App() {
   return (<>
     <LinechessProvider>
       <Router root={Layout}>
-        <Route path='/' component={Main}/>
+        <Route path='/' component={DashboardPage}/>
+        <Route path='/repertoire' component={RepertoirePage}/>
         <Route path='/about' component={About}/>
         <Route path='/legal' component={Legal}/>
         <Route path='*404' component={NotFound}/>

@@ -1,29 +1,37 @@
-import { Dynamic, For, Show } from "solid-js/web"
+import { For, Show } from "solid-js/web"
 import { useState } from "../state/State"
-import { A } from "@solidjs/router"
+import { A, useNavigate, type Navigator } from "@solidjs/router"
 import { createMemo, createSelector, createSignal, onCleanup, createEffect, } from "solid-js"
 import './Main.scss'
 import type { OpeningListModel } from "../state/idb_model"
 import type { OpeningDiverge, RecentMatch, SingleLineMove } from "../state/types"
+import type { DashboardTab } from "../state/linechess_state"
 
-function Main() {
 
-  let [{linechess_state: state}] = useState()
+export function DashboardPage() {
   return (<>
     <main>
       <div class='main-dashboard-tabs'>
         <DashboardTabs />
         <div class='dashboard-content'>
-          <Dynamic component={TabContents[state.dashboard_tab]} />
+          <DashboardContent/>
         </div>
       </div>
     </main>
   </>)
 }
 
-const TabContents = {
-  dashboard: DashboardContent,
-  repertoire: RepertoireContent
+export function RepertoirePage() {
+  return (<>
+    <main>
+      <div class='main-dashboard-tabs'>
+        <DashboardTabs />
+        <div class='dashboard-content'>
+          <RepertoireContent/>
+        </div>
+      </div>
+    </main>
+  </>)
 }
 
 function RepertoireContent() {
@@ -523,6 +531,8 @@ function RecentMatches() {
 
   const [{ dashboard_state: state }, { linechess_actions }] = useState()
 
+  let navigate = useNavigate()
+
   const goto_opening = (diverge: OpeningDiverge) => {
 
     let list_id = diverge.most_matched_opening.list.id
@@ -532,7 +542,7 @@ function RecentMatches() {
     linechess_actions.select_opening_line(line_id)
 
 
-    linechess_actions.set_dashboard_tab('repertoire')
+    set_dashboard_tab(navigate, 'repertoire')
     window.scrollTo({ top: 0 })
   }
 
@@ -564,7 +574,7 @@ function RecentMatches() {
       let ply = i % 2 === 0 ? `${Math.ceil((i + 1) / 2)}. ` : ''
       return `${ply}${san}`
     }).join(' '))
-    linechess_actions.set_dashboard_tab('repertoire')
+    set_dashboard_tab(navigate, 'repertoire')
     window.scrollTo({ top: 0 })
   }
 
@@ -637,22 +647,29 @@ function OpeningLineLittleView(props: { moves: string[] }) {
   </>)
 }
 
-function DashboardTabs() {
-  let [{linechess_state: state}, { linechess_actions: { set_dashboard_tab }}] = useState()
-
-  const is_selected = createSelector(() => state.dashboard_tab)
-
-  return (<>
-    <div class='dashboard-tabs'>
-      <div onClick={() => set_dashboard_tab('dashboard')} class='tab' classList={{ active: is_selected('dashboard')}}>Dashboard</div>
-      <div onClick={() => set_dashboard_tab('repertoire')} class='tab' classList={{ active: is_selected('repertoire')}}>Repertoire</div>
-    </div>
-  </>)
+const set_dashboard_tab = (navigate: Navigator, tab: DashboardTab) => {
+  if (tab === 'repertoire') {
+    navigate('/repertoire')
+  } else {
+    navigate('/')
+  }
 }
 
 
-export default Main
 
+function DashboardTabs() {
+  let [{linechess_state: state}] = useState()
+
+  const is_selected = createSelector(() => state.dashboard_tab)
+
+  const navigate = useNavigate()
+  return (<>
+    <div class='dashboard-tabs'>
+      <div onClick={() => set_dashboard_tab(navigate, 'dashboard')} class='tab' classList={{ active: is_selected('dashboard')}}>Dashboard</div>
+      <div onClick={() => set_dashboard_tab(navigate, 'repertoire')} class='tab' classList={{ active: is_selected('repertoire')}}>Repertoire</div>
+    </div>
+  </>)
+}
 
 export function ply_to_display(ply: number) {
     return (ply % 2 === 1) ? `${Math.ceil(ply / 2)}.` : ''

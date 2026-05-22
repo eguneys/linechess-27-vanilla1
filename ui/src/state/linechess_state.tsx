@@ -1,12 +1,11 @@
 import { createStore } from "solid-js/store"
 import { makePersisted } from "@solid-primitives/storage"
 import type { OpeningLineId, OpeningListId } from "./types"
-import { createAsync, type AccessorWithLatest } from "@solidjs/router"
+import { createAsync, useLocation, type AccessorWithLatest } from "@solidjs/router"
 import type { Idb_Store, LightOpeningListModel, OpeningLineModel, OpeningListModel } from "./idb_model"
 import { createSignal } from "solid-js"
 
 export type DashboardTab = 'dashboard' | 'repertoire'
-
 
 export type State = {
     dashboard_tab: DashboardTab
@@ -20,8 +19,8 @@ export type State = {
     add_new_line_pgn: string
 }
 
+
 export type Actions = {
-    set_dashboard_tab: (tab: DashboardTab) => void
     set_open_create_new_opening: (v: boolean) => void
     set_open_add_new_line: (v: boolean, pgn?: string) => void
     create_opening_list: (name: string) => Promise<OpeningListId | undefined>
@@ -36,7 +35,6 @@ export type LinechessStore = [State, Actions]
 
 
 type LinechessPersistedStore = {
-    dashboard_tab: DashboardTab
     selected_opening_list_id: OpeningListId | undefined
     selected_opening_line_id: OpeningLineId | undefined
     is_create_new_opening_modal_open: boolean
@@ -52,7 +50,6 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
     let [store, set_store] = makePersisted(createStore<LinechessPersistedStore>({
         is_create_new_opening_modal_open: false,
         is_add_new_line_modal_open: false,
-        dashboard_tab: 'dashboard',
         selected_opening_list_id: undefined,
         selected_opening_line_id: undefined,
     }), { name: '.linechess.store.v1'})
@@ -85,11 +82,17 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
     })
 
     let state = {
+        get dashboard_tab() {
+            let location = useLocation()
+            if (location.pathname === '/') {
+                return 'dashboard'
+            } else if (location.pathname === '/repertoire') {
+                return 'repertoire'
+            }
+            return 'dashboard'
+        },
         get add_new_line_pgn() {
             return temp_store.add_new_line_pgn
-        },
-        get dashboard_tab() {
-            return store.dashboard_tab
         },
         get selected_opening_list_id() {
             return store.selected_opening_list_id
@@ -115,11 +118,6 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
     }
 
     let actions = {
-        set_dashboard_tab(tab: DashboardTab) {
-            set_store({
-                dashboard_tab: tab
-            })
-        },
         set_open_create_new_opening(v: boolean) {
             set_store({
                 is_create_new_opening_modal_open: v
