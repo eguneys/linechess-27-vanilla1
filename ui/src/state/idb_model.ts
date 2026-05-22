@@ -1,4 +1,5 @@
-import { parse_mainline_ucis_from_pgn } from "./chess_parser"
+import type { Color } from "chessops"
+import { parse_mainline_from_pgn } from "./chess_parser"
 import { make_database, type DatabaseActions } from "./idb"
 import { gen_id, type LichessSearchHandle, type OpeningDiverge, type OpeningLineId, type OpeningList, type OpeningListId, type SingleLineMove } from "./types"
 
@@ -25,11 +26,20 @@ export type OpeningLineModel = {
     moves: SingleLineMoveModel[]
 }
 
+
+export type OpeningLineModelWithList = {
+    id: string
+    name: string
+    pgn: string
+    moves: SingleLineMoveModel[]
+    list: LightOpeningListModel
+}
+
 export type Idb_Model_State = {
     get_opening_lists(): Promise<LightOpeningListModel[]>
     get_opening_list_by_id(id: OpeningListId): Promise<OpeningListModel | undefined>
     get_opening_line_by_id(id: OpeningLineId): Promise<OpeningLineModel | undefined>
-    get_opening_diverge_for_moves(moves: string): Promise<OpeningDiverge>
+    get_opening_diverge_for_moves(your_color: Color, sans: string[]): Promise<OpeningDiverge | undefined>
     get_recent_search_handle_by_username_since(username: string, since: number): Promise<LichessSearchHandle | undefined>
 }
 
@@ -85,11 +95,69 @@ export async function make_idb_model(): Promise<Idb_Store> {
                 moves
             }
         },
-        async get_opening_diverge_for_moves(moves: string) {
-            let res!: OpeningDiverge
-            // TODO
-            moves;
+        async get_opening_diverge_for_moves(your_color: Color, sans: string[]) {
 
+            let diverge_at_ply = -1
+            let most_matched_opening
+
+
+            let opening_lists = await db_state.get_opening_lists()
+
+            for (let list of opening_lists) {
+                let lines = await db_state.get_opening_lines_by_list_id(list.id)
+
+                for (let line of lines) {
+                    let line_moves = await db_state.get_line_moves_by_line_id(line.id)
+
+                    line_moves.sort((a, b) => a.ply - b.ply)
+
+                    let diverge_at_ply_i = -1
+                    for (let i = 0; i < line_moves.length; i++) {
+                        if (line_moves[i].san === sans[i]) {
+                            diverge_at_ply_i = i
+                            continue
+                        }
+                        diverge_at_ply_i = i
+                        break
+                    }
+
+                    if (diverge_at_ply_i > diverge_at_ply) {
+                        diverge_at_ply = diverge_at_ply_i
+                        most_matched_opening = {
+                            id: line.id,
+                            name: line.name,
+                            pgn: line.pgn,
+                            moves: line_moves,
+                            list
+                        }
+                    }
+
+                }
+
+            }
+
+
+            if (!most_matched_opening) {
+                return undefined
+            }
+
+            let after_ply = diverge_at_ply
+            let after_nb_moves = diverge_at_ply
+            let after_move = sans[after_ply]
+            let diverge_move = sans[after_ply + 1]
+            let diverge_ply = after_ply + 1
+            let did_you_diverge = (your_color === 'white') === (diverge_at_ply % 2 === 0)
+
+            let res: OpeningDiverge = {
+                most_matched_opening,
+                diverge_at_ply,
+                after_nb_moves,
+                after_ply,
+                after_move,
+                diverge_move,
+                diverge_ply,
+                did_you_diverge
+            }
             return res
         },
         async get_recent_search_handle_by_username_since(username: string, since: number): Promise<LichessSearchHandle | undefined> {
@@ -103,7 +171,8 @@ export async function make_idb_model(): Promise<Idb_Store> {
                 nb_rapid: 0,
                 nb_classical: 0,
                 recent_matches: [],
-                is_fetching_recent_games: true
+                is_fetching_recent_games: true,
+                last_checked: 0
             }
             since;
 
@@ -115,9 +184,9 @@ export async function make_idb_model(): Promise<Idb_Store> {
         db_actions,
         async create_opening_line(list_id: OpeningListId, name: string, pgn: string) {
 
-            let sans = parse_mainline_ucis_from_pgn(pgn)
+            let sans = parse_mainline_from_pgn(pgn)
 
-            if (sans.length < 3) {
+            if (sans.length < 2) {
                 throw new InvalidPGNException()
             }
             let line_id = await db_actions.create_opening_line(list_id, name, pgn)

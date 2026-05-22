@@ -13,6 +13,7 @@ export type DashboardState = {
 
 export type DashboardActions = {
     set_search_handle(name: string): void
+    check_games_now(): void
 }
 
 export type DashboardStore = [DashboardState, DashboardActions]
@@ -30,7 +31,7 @@ export function make_dashboard(get_db: AccessorWithLatest<Idb_Store | undefined>
         search_handle: ''
     }), { name: '.linechess.dashboardstore.v1'})
 
-    const [, { set_search_handle }] = make_lichess_api_with_cache(get_db)
+    const [, { set_search_handle, check_games_now }] = make_lichess_api_with_cache(get_db)
 
     const search_handle = createAsync(() => set_search_handle(store.search_handle))
 
@@ -49,6 +50,9 @@ export function make_dashboard(get_db: AccessorWithLatest<Idb_Store | undefined>
     let actions = {
         set_search_handle(name: string) {
             set_store('search_handle', name)
+        },
+        check_games_now() {
+            check_games_now()
         }
     }
 

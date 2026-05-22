@@ -249,7 +249,7 @@ function AddNewLineOpeningDialog() {
             <div class='title'>Add New Opening Line</div>
             <div class='input-group'>
               <label>to list</label>
-              <p class='list-name'>{state.selected_opening_list!.name}</p>
+              <p class='list-name'>{state.selected_opening_list?.name}</p>
             </div>
 
             <div class='input-group'>
@@ -381,7 +381,10 @@ function WelcomeFitnessScore() {
 
   return (<>
     <div class='welcome-fitness'>
-      <div class='welcome'>Hi, <span>{handle().username}</span></div>
+      <div class='welcome-info'>
+        <div class='welcome'>Hi, <A href={`https://lichess.org/@/${handle().handle}`} target='_blank'>{handle().username}</A></div>
+        <div class='last-checked'>Recent games should appear shortly</div>
+      </div>
       <div class='fitness stats'>
         <div class='stat background-container'>
           <OpacityBlurShow when={handle().is_fetching_recent_games}/>
@@ -518,33 +521,46 @@ function RecentMatches() {
         <div class='info'>
             <div class='situation'>
               <div class='type'><span class='speed'>{item.speed}</span> · {item.is_rated?'Rated':'Unrated'}</div>
-              <div class='time'>{formatMomentsAgo(item.game_created_at)}</div>
+              <div class='time'>{MomentsAgo(item.game_created_at)}</div>
             </div>
             <div class='vs'>
               <div class='players'>{item.white} vs {item.black}</div>
-              <Show when={item.opening_diverge} fallback={
-                <A href='https://lichess.org'>Analyse on Lichess</A>
-              }>{ _diverge =>
+              <Show when={item.opening.diverge} fallback={
+                <A href={`https://lichess.org/${item.lichess_game_id}`}>Analyse on Lichess</A>
+              }>{ diverge =>
                 <div class='diverge'>
-                  <span class='who'>You</span>
-                  diverged after <span class='nb-moves'>2 moves</span> after <span class='after-move'>2.e5</span> with
-                  <span class='move'>3.Nf3</span>
+                  <span class='who'>{diverge().did_you_diverge ? 'You': 'They'}</span>
+                  diverged after <span class='after-move'>{diverge().after_ply}.{diverge().after_move}</span> with
+                  <span class='move'>{diverge().diverge_ply}.{diverge().diverge_move}</span>
                 </div>
               }</Show>
-              <div class='outcome'>You won!</div>
+              <div class='outcome'>{item.did_you_draw?`You drew!`:item.did_you_win?'You won!': 'You lost!'}</div>
             </div>
             <div class='opening'>
-              <Show when={item.opening_diverge} fallback={
-                <div class='nomatch'>No opening matched</div>
-              }>
-                <div class='name'>Queen's Gambit Declined · <span class='variation'>Advanced Variation</span></div>
-              </Show>
-              <div class='line'>1.e4 e5 2.Nf3 Nf6 ... 27 moves</div>
+              <Show when={item.opening.diverge} fallback={
+                <div class='nomatch'>No opening matched :[</div>
+              }>{ diverge =>
+                <div class='name'>{diverge().most_matched_opening.list.name} · <span class='variation'>{diverge().most_matched_opening.name}</span></div>
+              }</Show>
+              <OpeningLineLittleView moves={item.opening.moves}/>
 
             </div>
         </div>
       </div>
     }</For>
+  </div>
+  </>)
+}
+
+function OpeningLineLittleView(props: { moves: string[] }) {
+  return (<>
+  <div class='little-line'>
+      <div class='list'>
+        <For each={props.moves.slice(0, 13)}>{(move, index) =>
+          <span class='move'><span class='index'>{index() % 2 === 0 ? `${index() / 2 + 1}.` : ''}</span> {move}</span>
+        }</For>
+      </div>
+      <span>{props.moves.length} moves</span>
   </div>
   </>)
 }
@@ -578,9 +594,21 @@ export function format_zero(value: number, repeat = 1) {
   return value ? value : '-'.repeat(repeat)
 }
 
+export function MomentsAgo(timestamp: number) {
 
-export function formatMomentsAgo(timestamp: number): string {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000)
+  const [now, set_now] = createSignal(Date.now())
+
+  let interval_id = setInterval(() => set_now(Date.now()), 30 * 1000)
+
+  onCleanup(() => clearInterval(interval_id))
+
+  return <>
+    {formatMomentsAgo(now(), timestamp)}
+  </>
+}
+
+export function formatMomentsAgo(now: number, timestamp: number): string {
+    const seconds = Math.floor((now - timestamp) / 1000)
 
     if (seconds < 1) return "just now"
     if (seconds < 60) return `${seconds}s ago`
@@ -600,5 +628,3 @@ export function formatMomentsAgo(timestamp: number): string {
     const years = Math.floor(months / 12)
     return `${years}y ago`
 }
-
-

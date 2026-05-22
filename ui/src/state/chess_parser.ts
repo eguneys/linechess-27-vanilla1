@@ -7,7 +7,7 @@ export type SAN = string
 export type UCI = string
 export type FEN = string
 
-export function parse_mainline_ucis_from_pgn(pgn: string) {
+export function parse_mainline_from_pgn(pgn: string) {
     let res: { uci: UCI, san: SAN } [] = []
 
     let parsed = parsePgn(pgn)[0]

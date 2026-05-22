@@ -1,5 +1,6 @@
 import type { Color } from "chessops"
 import type { SAN, UCI } from "./chess_parser"
+import type {  OpeningLineModelWithList } from "./idb_model"
 
 export type OpeningListId = string
 
@@ -49,13 +50,25 @@ export function is_allowed_speed(_: string): _ is AllowedSpeed {
 }
 
 export type OpeningDiverge = {
-    opening: string
-    diverge: string
+    after_nb_moves: number
+    after_ply: number
+    after_move: string
+    diverge_move: string
+    diverge_ply: number
+    did_you_diverge: boolean
+    most_matched_opening: OpeningLineModelWithList
+    diverge_at_ply: number
+}
+
+export type OpeningInfo = {
+    diverge?: OpeningDiverge
+    moves: string[]
 }
 
 export type RecentMatch = {
-    opening_diverge: OpeningDiverge
+    opening: OpeningInfo
     game_created_at: number
+    game_last_move_at: number
     is_rated: boolean
     lichess_game_id: string
     white: string
@@ -80,4 +93,5 @@ export type LichessSearchHandle = {
     nb_classical: number
     recent_matches: RecentMatch[]
     is_fetching_recent_games: boolean
+    last_checked: number
 }

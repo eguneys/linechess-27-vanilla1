@@ -219,6 +219,25 @@
 
                     .opening {
                         font-size: variables.$s3;
+
+                        .little-line {
+                            display: flex;
+                            gap: variables.$m1;
+                            line-height: variables.$l0;
+
+                            .list {
+                                display: flex;
+                                color: variables.$cyan1;
+                                gap: variables.$s1;
+
+                                .move {
+                                
+                                        .index {
+                                            color: variables.$cyan2;
+                                        }
+                                    }
+                            }
+                        }
                     }
 
                     .diverge {
@@ -233,7 +252,7 @@
                             font-size: variables.$m2;
                         }
 
-                        .nb-moves, .after-move, .move {
+                        .who, .nb-moves, .after-move, .move {
                             line-height: 1.2em;
                             color: variables.$cyan1;
 
@@ -260,6 +279,25 @@
 
             display: flex;
             flex-flow: column;
+
+            .welcome-info {
+                display: flex;
+                justify-content: center;
+                position: relative;
+
+                .last-checked {
+                    font-size: variables.$s3;
+                    position: absolute;
+                    right: 0;
+                    padding: variables.$m0;
+                    color: variables.$cyan2;
+                    //cursor: pointer;
+
+                    &.hover {
+                        color: variables.$cyan0;
+                    }
+                }
+            }
 
             .welcome {
                 align-self: center;
