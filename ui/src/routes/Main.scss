@@ -217,25 +217,33 @@
                         }
                     }
 
-                    .opening {
-                        font-size: variables.$s3;
 
-                        .little-line {
-                            display: flex;
-                            gap: variables.$m1;
-                            line-height: variables.$l0;
+                    .opening-and-controls {
 
-                            .list {
+                        align-self: stretch;
+                        display: flex;
+                        justify-content: space-around;
+
+                        .opening {
+                            font-size: variables.$s3;
+
+                            .little-line {
                                 display: flex;
-                                color: variables.$cyan1;
-                                gap: variables.$s1;
+                                gap: variables.$m1;
+                                line-height: variables.$l0;
 
-                                .move {
-                                
-                                        .index {
-                                            color: variables.$cyan2;
+                                .list {
+                                    display: flex;
+                                    color: variables.$cyan1;
+                                    gap: variables.$s1;
+
+                                    .move {
+                                    
+                                            .index {
+                                                color: variables.$cyan2;
+                                            }
                                         }
-                                    }
+                                }
                             }
                         }
                     }
@@ -510,7 +518,7 @@
                 flex: 1;
                 display: flex;
                 flex-flow: column;
-                min-height: 40em;
+                min-height: 30em;
             
                 .header {
                     display: flex;

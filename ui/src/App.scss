@@ -187,3 +187,27 @@ main {
         }
     }
 }
+
+
+main {
+    select {
+            /* 1. Remove default browser styling (the arrow) */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+    
+            /* 2. Basic box styling */
+            width: 100%;
+            padding: variables.$s0;
+            @include variables.rounded;
+            background-color: variables.$cyan-4;
+            cursor: pointer;
+        }
+    
+        /* Add a focus state for accessibility */
+        select:focus {
+            outline: none;
+            border-color: variables.$cyan0;
+            box-shadow: 0 0 0 3px variables.$cyan5;
+        }
+}

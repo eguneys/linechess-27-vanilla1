@@ -200,7 +200,7 @@ function AddNewLineOpeningDialog() {
 
   const [pgn_error, set_pgn_error] = createSignal('')
 
-  const [{ linechess_state: state }, { linechess_actions: { set_open_add_new_line, select_opening_line, create_opening_line }}] = useState()
+  const [{ linechess_state: state }, { linechess_actions: { set_open_add_new_line, select_opening_line, create_opening_line, select_opening_list }}] = useState()
 
   const close = () => set_open_add_new_line(false)
 
@@ -240,6 +240,8 @@ function AddNewLineOpeningDialog() {
   let $opening_line_name_text!: HTMLInputElement
   let $opening_line_pgn_text!: HTMLInputElement
 
+  let $selected_opening_list!: HTMLSelectElement
+
   return (<>
     <dialog open={state.is_add_new_line_modal_open}>
       <div onClick={close} class='dialog-backdrop'></div>
@@ -249,7 +251,11 @@ function AddNewLineOpeningDialog() {
             <div class='title'>Add New Opening Line</div>
             <div class='input-group'>
               <label>to list</label>
-              <p class='list-name'>{state.selected_opening_list?.name}</p>
+              <select onChange={() => select_opening_list($selected_opening_list.value)} ref={$selected_opening_list} value={state.selected_opening_list?.id} name="list_name">
+                <For each={state.opening_lists}>{ item =>
+                  <option value={item.id}>{item.name}</option>
+                }</For>
+              </select>
             </div>
 
             <div class='input-group'>
@@ -259,7 +265,7 @@ function AddNewLineOpeningDialog() {
 
             <div class='input-group'>
                <label for="opening_line_pgn">Opening Line PGN</label>
-               <input spellcheck="false" autocorrect="off" aria-invalid={!!pgn_error()} minLength={8} required={true} ref={$opening_line_pgn_text} id="opening_line_pgn" type='text' placeholder="Enter Line PGN..."></input>
+               <input spellcheck="false" autocorrect="off" aria-invalid={!!pgn_error()} minLength={8} required={true} ref={$opening_line_pgn_text} id="opening_line_pgn" type='text' placeholder="Enter Line PGN..." value={state.add_new_line_pgn}></input>
                <Show when={pgn_error()}>{error =>
                 <div class='error'>{error()}</div>
               }</Show>
@@ -533,6 +539,27 @@ function RecentMatches() {
     }
   }
 
+
+  const on_add_to_repertoire = (match: RecentMatch) => {
+
+    let moves = match.opening.moves
+
+    let diverge = match.opening.diverge
+    if (diverge) {
+      let list_id = diverge.most_matched_opening.list.id
+      let line_id = diverge.most_matched_opening.id
+
+      linechess_actions.select_opening_list(list_id)
+      linechess_actions.select_opening_line(line_id)
+
+
+      linechess_actions.set_dashboard_tab('repertoire')
+      window.scrollTo({ top: 0 })
+
+      linechess_actions.set_open_add_new_line(true, moves.slice(0, 20).join(' '))
+    }
+  }
+
   return (<>
   <div class='matches-list'>
     <For each={state.search_handle?.recent_matches} fallback={
@@ -553,28 +580,36 @@ function RecentMatches() {
               <div class='time'>{MomentsAgo(item.game_created_at)}</div>
             </div>
             <div class='vs'>
-              <div class='players'>{item.white} vs {item.black}</div>
+                <A href={`https://lichess.org/${item.lichess_game_id}`}>
+                  <span class='players'>  {item.white} vs {item.black}</span>
+                </A>
               <Show when={item.opening.diverge} fallback={
-                <A href={`https://lichess.org/${item.lichess_game_id}`}>Analyse on Lichess</A>
+                <>
+                </>
               }>{ diverge =>
                 <div class='diverge'>
-                  <span class='who'>{diverge().did_you_diverge ? 'You': 'They'}</span>
-                  diverged after <span class='after-move'>{diverge().after_ply}.{diverge().after_move}</span> with
-                  <span class='move'>{diverge().diverge_ply}.{diverge().diverge_move}</span>
+                  After <span class='after-move'>{ply_to_dots(diverge().after_ply)}{diverge().after_move}</span> &nbsp;
+                      <span class='who'>{diverge().did_you_diverge ? 'You' : 'They'}</span>
+                      diverged  with
+                  <span class='move'>{ply_to_dots(diverge().diverge_ply)}{diverge().diverge_move}</span>
                 </div>
               }</Show>
-              <div class='outcome'>{item.did_you_draw?`You drew!`:item.did_you_win?'You won!': 'You lost!'}</div>
-            </div>
-            <div class='opening'>
-              <Show when={item.opening.diverge} fallback={
-                <div class='nomatch'>No opening matched :[</div>
-              }>{ diverge =>
-                <div class='name'>{diverge().most_matched_opening.list.name} · <span class='variation'>{diverge().most_matched_opening.name}</span></div>
-              }</Show>
-              <OpeningLineLittleView moves={item.opening.moves}/>
+                <div class='outcome'>{item.did_you_draw ? `You drew!` : item.did_you_win ? 'You won!' : 'You lost!'}</div>
 
+              </div>
+              <div class='opening-and-controls'>
+                <div class='opening'>
+                  <Show when={item.opening.diverge} fallback={
+                    <div class='nomatch'>No opening matched :[</div>
+                  }>{diverge =>
+                    <div class='name'>{diverge().most_matched_opening.list.name} · <span class='variation'>{diverge().most_matched_opening.name}</span></div>
+                    }</Show>
+                  <OpeningLineLittleView moves={item.opening.moves} />
+                </div>
+
+                <button onClick={e => { e.stopPropagation(); on_add_to_repertoire(item)}} class='primary'>+ Add to repertoire</button>
+              </div>
             </div>
-        </div>
       </div>
     }</For>
   </div>
@@ -589,7 +624,7 @@ function OpeningLineLittleView(props: { moves: string[] }) {
           <span class='move'><span class='index'>{index() % 2 === 0 ? `${index() / 2 + 1}.` : ''}</span> {move}</span>
         }</For>
       </div>
-      <span>{props.moves.length} moves</span>
+      <span>{Math.ceil(props.moves.length / 2)} moves</span>
   </div>
   </>)
 }
@@ -656,4 +691,8 @@ export function formatMomentsAgo(now: number, timestamp: number): string {
 
     const years = Math.floor(months / 12)
     return `${years}y ago`
+}
+
+const ply_to_dots = (ply: number) => {
+  return (ply % 2 === 0) ? `${Math.ceil((ply + 1) / 2)}.` : `${Math.ceil((ply + 1) / 2)}...`
 }

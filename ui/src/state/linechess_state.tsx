@@ -17,12 +17,13 @@ export type State = {
     is_add_new_line_modal_open: boolean
     selected_opening_line_id: OpeningLineId | undefined
     selected_opening_line: OpeningLineModel | undefined
+    add_new_line_pgn: string
 }
 
 export type Actions = {
     set_dashboard_tab: (tab: DashboardTab) => void
     set_open_create_new_opening: (v: boolean) => void
-    set_open_add_new_line: (v: boolean) => void
+    set_open_add_new_line: (v: boolean, pgn?: string) => void
     create_opening_list: (name: string) => Promise<OpeningListId | undefined>
     select_opening_list: (id: OpeningListId) => void
     delete_opening_list: (id: OpeningListId) => void
@@ -44,10 +45,14 @@ type LinechessPersistedStore = {
 
 export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | undefined>): LinechessStore {
 
+    let [temp_store, set_temp_store] = createStore({
+        add_new_line_pgn: ''
+    })
+
     let [store, set_store] = makePersisted(createStore<LinechessPersistedStore>({
         is_create_new_opening_modal_open: false,
         is_add_new_line_modal_open: false,
-        dashboard_tab: 'repertoire',
+        dashboard_tab: 'dashboard',
         selected_opening_list_id: undefined,
         selected_opening_line_id: undefined,
     }), { name: '.linechess.store.v1'})
@@ -80,6 +85,9 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
     })
 
     let state = {
+        get add_new_line_pgn() {
+            return temp_store.add_new_line_pgn
+        },
         get dashboard_tab() {
             return store.dashboard_tab
         },
@@ -117,10 +125,15 @@ export function make_linechess_store(get_db: AccessorWithLatest<Idb_Store | unde
                 is_create_new_opening_modal_open: v
             })
         },
-        set_open_add_new_line(v: boolean) {
+        set_open_add_new_line(v: boolean, pgn?: string) {
             set_store({
                 is_add_new_line_modal_open: v
             })
+            if (pgn) {
+                set_temp_store({
+                    add_new_line_pgn: pgn
+                })
+            }
         },
         async create_opening_list(name: string) {
             let res = await get_db()?.[1].db_actions.create_opening_list(name)

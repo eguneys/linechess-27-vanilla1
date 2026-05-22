@@ -118,7 +118,6 @@ export async function make_idb_model(): Promise<Idb_Store> {
                             diverge_at_ply_i = i
                             continue
                         }
-                        diverge_at_ply_i = i
                         break
                     }
 
