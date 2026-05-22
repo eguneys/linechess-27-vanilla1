@@ -146,7 +146,7 @@ export async function make_idb_model(): Promise<Idb_Store> {
             let after_move = sans[after_ply]
             let diverge_move = sans[after_ply + 1]
             let diverge_ply = after_ply + 1
-            let did_you_diverge = (your_color === 'white') === (diverge_at_ply % 2 === 0)
+            let did_you_diverge = (your_color === 'white') === (diverge_at_ply % 2 === 1)
 
             let res: OpeningDiverge = {
                 most_matched_opening,
