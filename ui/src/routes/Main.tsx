@@ -560,7 +560,10 @@ function RecentMatches() {
 
     }
 
-    linechess_actions.set_open_add_new_line(true, moves.slice(0, 20).join(' '))
+    linechess_actions.set_open_add_new_line(true, moves.slice(0, 40).map((san, i) => {
+      let ply = i % 2 === 0 ? `${Math.ceil((i + 1) / 2)}. ` : ''
+      return `${ply}${san}`
+    }).join(' '))
     linechess_actions.set_dashboard_tab('repertoire')
     window.scrollTo({ top: 0 })
   }
