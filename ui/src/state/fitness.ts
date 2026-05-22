@@ -165,7 +165,7 @@ const stats_params: Record<AllowedSpeed, FitnessStatsParameters> = {
     },
     classical: {
         nb_played_goal: 2,
-        nb_your_max_diverge: 0,
+        nb_your_max_diverge: 1,
         nb_their_max_diverge: 1,
         nb_novelty_max: 1
     },
