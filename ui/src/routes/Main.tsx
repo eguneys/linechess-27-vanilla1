@@ -350,7 +350,7 @@ function CreateNewOpeningDialog() {
 
 function DashboardContent() {
 
-  const [{ dashboard_state: state },{ linechess_actions: { set_dashboard_tab }, dashboard_actions: { set_search_handle }}] = useState()
+  const [{ dashboard_state: state },{ dashboard_actions: { set_search_handle }}] = useState()
 
   let $search_handle!: HTMLInputElement
 

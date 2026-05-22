@@ -26,7 +26,7 @@ export function make_lichess_api_with_cache(get_db: AccessorWithLatest<Idb_Store
     async function step() {
         await check_games()
         clearInterval(interval_id)
-        interval_id = setTimeout(step, 30 * 1000)
+        interval_id = setTimeout(step, 60 * 1000)
     }
 
     let actions = {
