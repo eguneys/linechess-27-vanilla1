@@ -61,6 +61,9 @@ export type RecentMatch = {
     white: string
     black: string
     winner: Color
+    you: Color
+    did_you_win: boolean
+    did_you_draw: boolean
     speed: AllowedSpeed
     perf: string
 }

@@ -3,6 +3,7 @@ import type { Idb_Store } from "./idb_model"
 import { is_allowed_speed, type AllowedSpeed, type LichessSearchHandle, type RecentMatch } from "./types"
 import { create_lichess_agent, type exportGameResponse } from "./lichess_agent"
 import { createStore, produce, unwrap } from "solid-js/store"
+import type { Color } from "chessops"
 
 export type LichessApiState = {
 }
@@ -54,7 +55,7 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
 
         try {
             for await (const game of stream) {
-                let b_game = await map_export_game_to_recent_match(db, game)
+                let b_game = await map_export_game_to_recent_match(db, username, game)
                 if (b_game !== undefined) {
                     batched_games.push(b_game)
                 }
@@ -102,7 +103,9 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
 
             await pc_actions.set_search_handle(handle)
 
-            return await read_from_stream_fetching_recent_games(db, username, since)
+            read_from_stream_fetching_recent_games(db, username, since)
+
+            return pc_state.lichess_search_handle
         }
     }
 
@@ -157,7 +160,7 @@ export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandl
 }
 
 
-async function map_export_game_to_recent_match(db: Idb_Store, game: exportGameResponse): Promise<RecentMatch | undefined> {
+async function map_export_game_to_recent_match(db: Idb_Store, username: string, game: exportGameResponse): Promise<RecentMatch | undefined> {
 
     let is_rated = game.rated
     let game_created_at = game.createdAt
@@ -165,12 +168,12 @@ async function map_export_game_to_recent_match(db: Idb_Store, game: exportGameRe
     let initial_fen = game.initialFen
     let moves = game.moves
     let perf = game.perf
-    let black = game.players.black.name
-    let white = game.players.white.name
+    let black = game.players.black.user.name
+    let white = game.players.white.user.name
     let winner = game.winner
     let speed = game.speed
     let variant = game.variant
-    //let status = game.status
+    let status = game.status
 
     if (variant !== 'standard') {
         return undefined
@@ -188,6 +191,10 @@ async function map_export_game_to_recent_match(db: Idb_Store, game: exportGameRe
         return undefined
     }
 
+    let you: Color = white === username ? 'white' : 'black'
+    let did_you_win = winner === you
+    let did_you_draw = status === 'draw'
+
     let opening_diverge = await db[0].get_opening_diverge_for_moves(moves)
 
     let res: RecentMatch = {
@@ -199,7 +206,10 @@ async function map_export_game_to_recent_match(db: Idb_Store, game: exportGameRe
         white,
         black,
         winner,
-        speed
+        speed,
+        you,
+        did_you_win,
+        did_you_draw
     }
 
     return res
