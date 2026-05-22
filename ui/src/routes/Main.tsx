@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js/web"
 import { useState } from "../state/State"
 import { A, useNavigate, type Navigator } from "@solidjs/router"
-import { createMemo, createSelector, createSignal, onCleanup, createEffect, } from "solid-js"
+import { createMemo, createSelector, createSignal, onCleanup, createEffect, onMount, } from "solid-js"
 import './Main.scss'
 import type { OpeningListModel } from "../state/idb_model"
 import type { OpeningDiverge, RecentMatch, SingleLineMove } from "../state/types"
@@ -257,6 +257,10 @@ function AddNewLineOpeningDialog() {
 
   let $selected_opening_list!: HTMLSelectElement
 
+  onMount(() => {
+    $opening_line_name_text.focus()
+  })
+
   return (<>
     <dialog open={state.is_add_new_line_modal_open}>
       <div onClick={close} class='dialog-backdrop'></div>
@@ -332,6 +336,10 @@ function CreateNewOpeningDialog() {
   }
 
   let $opening_name_text!: HTMLInputElement
+
+  onMount(() => {
+    $opening_name_text.focus()
+  })
 
   return (<>
     <dialog open={state.is_create_new_opening_modal_open}>
