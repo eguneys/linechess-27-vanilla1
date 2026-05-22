@@ -4,6 +4,7 @@ import { is_allowed_speed, type AllowedSpeed, type LichessSearchHandle, type Ope
 import { create_lichess_agent, type exportGameResponse } from "./lichess_agent"
 import { createStore, produce, unwrap } from "solid-js/store"
 import type { Color } from "chessops"
+import { calculate_fitness_score } from "./fitness"
 
 export type LichessApiState = {
 }
@@ -142,14 +143,11 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
 }
 
 
-export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandle, games_to_add: RecentMatch[]): Promise<LichessSearchHandle> {
+export async function add_recent_games(_db: Idb_Store, handle: LichessSearchHandle, games_to_add: RecentMatch[]): Promise<LichessSearchHandle> {
 
     games_to_add = games_to_add.filter(b => !handle.recent_matches.some(a => a.lichess_game_id === b.lichess_game_id))
 
 
-    const add_fitness_score = (_db: Idb_Store, _fitness_score: number, _games_to_add: RecentMatch[]) => {
-        return 0
-    }
     const add_nb_played_score = (_nb_played_score: number, _games_to_add: RecentMatch[]) => {
         return 0
     }
@@ -158,7 +156,6 @@ export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandl
     }
 
 
-    let fitness_score = handle.fitness_score
     let nb_played_score = handle.nb_played_score
     let nb_blitz = handle.nb_blitz
     let nb_bullet = handle.nb_bullet
@@ -167,7 +164,6 @@ export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandl
     let username = handle.username
     let recent_matches = handle.recent_matches
 
-    let new_fitness_score = add_fitness_score(db, fitness_score, games_to_add)
     let new_nb_played_score = add_nb_played_score(nb_played_score, games_to_add)
     let new_nb_bullet = add_nb_speed(nb_bullet, games_to_add, 'bullet')
     let new_nb_blitz = add_nb_speed(nb_blitz, games_to_add, 'blitz')
@@ -176,6 +172,8 @@ export async function add_recent_games(db: Idb_Store, handle: LichessSearchHandl
     let new_recent_matches = [...recent_matches, ...games_to_add]
 
     new_recent_matches.sort((a, b) => b.game_created_at - a.game_created_at)
+
+    let new_fitness_score = calculate_fitness_score(new_recent_matches)
 
     let res: LichessSearchHandle = {
         handle: username.toLowerCase(),
@@ -278,7 +276,7 @@ export function make_lichess_search_handle_computer(): LichessSearchHandleComput
     let [store, set_store] = createStore<LichessSearchHandle>({
         username: '',
         handle: '',
-        fitness_score: 0,
+        fitness_score: calculate_fitness_score([]),
         nb_played_score: 0,
         nb_bullet: 0,
         nb_blitz: 0,

@@ -312,7 +312,6 @@
 
             .fitness.stats {
 
-
                 .nb-played {
                     .times {
                         display: flex;
@@ -748,8 +747,15 @@
         background: variables.$black05;
         width: 100%;
         height: variables.$m1;
-        border-radius: variables.$s0;
+        border-radius: variables.$s3;
         align-self: flex-end;
+        overflow: hidden;
+
+        .bar {
+            height: 100%;
+            background: variables.$cyan-5;
+            transition: width .2s;
+        }
     }
 }
 

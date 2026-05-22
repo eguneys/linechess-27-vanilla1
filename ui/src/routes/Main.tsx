@@ -4,7 +4,7 @@ import { A } from "@solidjs/router"
 import { createMemo, createSelector, createSignal, onCleanup, createEffect, } from "solid-js"
 import './Main.scss'
 import type { OpeningListModel } from "../state/idb_model"
-import type { SingleLineMove } from "../state/types"
+import type { OpeningDiverge, RecentMatch, SingleLineMove } from "../state/types"
 
 function Main() {
 
@@ -303,6 +303,13 @@ function CreateNewOpeningDialog() {
     close()
   }
 
+  const on_key_press = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      add_new_opening()
+    }
+
+  }
+
   let $opening_name_text!: HTMLInputElement
 
   return (<>
@@ -315,7 +322,7 @@ function CreateNewOpeningDialog() {
 
             <div class='input-group'>
                <label for="opening_name">Opening Name</label>
-               <input minLength={3} required={true} ref={$opening_name_text} id="opening_name" type='text' placeholder="Enter Opening Name..."></input>
+               <input onkeypress={on_key_press} minLength={3} required={true} ref={$opening_name_text} id="opening_name" type='text' placeholder="Enter Opening Name..."></input>
             </div>
           </div>
           <div class='action'>
@@ -388,9 +395,9 @@ function WelcomeFitnessScore() {
       <div class='fitness stats'>
         <div class='stat background-container'>
           <OpacityBlurShow when={handle().is_fetching_recent_games}/>
-          <div class='title'>Fitness Score</div>
-          <div class='value percent'>{format_fitness_score(handle().fitness_score)}</div>
-          <ProgressBar percent={handle().fitness_score} />
+          <div class='title'>Today's Fitness Score</div>
+          <div class='value percent'>{format_fitness_score(handle().fitness_score.fitness_score * 100)}</div>
+          <ProgressBar percent={handle().fitness_score.fitness_score * 100} />
         </div>
         <div class='stat nb-played background-container'>
           <OpacityBlurShow when={handle().is_fetching_recent_games}/>
@@ -413,7 +420,7 @@ function WelcomeFitnessScore() {
               <div class='value percent'>{format_zero(handle().nb_classical)}</div>
             </div>
           </div>
-          <ProgressBar percent={handle().nb_played_score} />
+          <ProgressBar percent={handle().fitness_score.nb_played_score * 100} />
         </div>
       </div>
     </div>
@@ -502,7 +509,29 @@ function LoginWithLichess() {
 
 function RecentMatches() {
 
-  const [{ dashboard_state: state }] = useState()
+  const [{ dashboard_state: state }, { linechess_actions }] = useState()
+
+  const goto_opening = (diverge: OpeningDiverge) => {
+
+    let list_id = diverge.most_matched_opening.list.id
+    let line_id = diverge.most_matched_opening.id
+
+    linechess_actions.select_opening_list(list_id)
+    linechess_actions.select_opening_line(line_id)
+
+
+    linechess_actions.set_dashboard_tab('repertoire')
+    window.scrollTo({ top: 0 })
+  }
+
+  const on_click_match = (match: RecentMatch) => {
+
+    if (match.opening.diverge) {
+      goto_opening(match.opening.diverge)
+    } else {
+      window.location.href = `https://lichess.org/${match.lichess_game_id}`
+    }
+  }
 
   return (<>
   <div class='matches-list'>
@@ -515,7 +544,7 @@ function RecentMatches() {
           </p>
         </div>
     }>{ item => 
-      <div class='match'>
+      <div onClick={() => on_click_match(item)} class='match'>
         <div class='board'>
         </div>
         <div class='info'>
