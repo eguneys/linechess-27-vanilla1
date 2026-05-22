@@ -365,7 +365,6 @@ function DashboardContent() {
           <h2>Opening Performance</h2>
           <p>Breakdown of the opening lines played in recent matches</p>
         </div>
-        <button onClick={() => set_dashboard_tab('repertoire')} class='import-pgn-btn primary'>Import PGN</button>
       </div>
 
       <div class="breakdown">
