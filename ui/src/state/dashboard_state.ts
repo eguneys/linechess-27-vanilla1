@@ -38,7 +38,7 @@ export function make_dashboard(get_db: AccessorWithLatest<Idb_Store | undefined>
         logged_in_user: undefined,
         search_handle: 'ediz_gurel',
         o_params: Default_O_params
-    }), { name: '.linechess.dashboardstore.v2'})
+    }), { name: '.linechess.dashboardstore.v3'})
 
 
     const get_o_params = createMemo(() => store.o_params)
