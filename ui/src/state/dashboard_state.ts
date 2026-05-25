@@ -36,7 +36,7 @@ export function make_dashboard(get_db: AccessorWithLatest<Idb_Store | undefined>
 
     let [store, set_store] = makePersisted(createStore<DashboardPersistedStore>({
         logged_in_user: undefined,
-        search_handle: '',
+        search_handle: 'ediz_gurel',
         o_params: Default_O_params
     }), { name: '.linechess.dashboardstore.v2'})
 

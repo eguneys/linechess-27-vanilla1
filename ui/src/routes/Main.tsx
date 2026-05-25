@@ -510,6 +510,7 @@ function ConfigureParameters(props: { params: Overall_Params }) {
         </div>
         <div>
           <label for='T_bullet'>Classical Factor</label>
+
           <Slider name={`T_classical`} step={0.1} min={0} max={1} value={props.params.Tc} on_value_changed={on_T_changed('classical')} />
         </div>
         </div>
