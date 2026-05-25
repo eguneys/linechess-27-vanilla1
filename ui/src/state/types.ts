@@ -1,7 +1,7 @@
 import type { Color } from "chessops"
 import type { SAN, UCI } from "./chess_parser"
 import type {  OpeningLineModelWithList } from "./idb_model"
-import type { FitnessScore } from "./fitness"
+import type { FitnessScore2 } from "./fitness2"
 
 export type OpeningListId = string
 
@@ -86,13 +86,7 @@ export type RecentMatch = {
 export type LichessSearchHandle = {
     handle: string
     username: string
-    fitness_score: FitnessScore
-    nb_played_score: number
-    nb_bullet: number
-    nb_blitz: number
-    nb_rapid: number
-    nb_classical: number
-    recent_matches: RecentMatch[]
+    fitness_score_with_recent_matches: FitnessScore2
     is_fetching_recent_games: boolean
     last_checked: number
 }

@@ -4,8 +4,9 @@ import { A, useNavigate, type Navigator } from "@solidjs/router"
 import { createMemo, createSelector, createSignal, onCleanup, createEffect, onMount, } from "solid-js"
 import './Main.scss'
 import type { OpeningListModel } from "../state/idb_model"
-import type { OpeningDiverge, RecentMatch, SingleLineMove } from "../state/types"
+import type { AllowedSpeed, OpeningDiverge, RecentMatch, SingleLineMove } from "../state/types"
 import type { DashboardTab } from "../state/linechess_state"
+import type { Overall_Params, TT_Params } from "../state/fitness2"
 
 
 export function DashboardPage() {
@@ -180,7 +181,7 @@ function ProgressBar(props: { percent: number }) {
 
   const [t, set_t] = createSignal(0)
 
-  const fill_bar = createMemo(() => props.percent * ease_springOut(t()))
+  const fill_bar = createMemo(() => Math.abs(props.percent) * ease_springOut(t()))
 
   const fill_timer_fn = () => {
     set_t(t() + 0.009)
@@ -203,8 +204,10 @@ function ProgressBar(props: { percent: number }) {
     if ($bar) $bar.style.width = `${fill_bar()}%`
   })
 
+  const is_negative = createMemo(() => props.percent < 0)
+
   return (<>
-    <div class='progress-bar'><div ref={$bar} class='bar'></div></div>
+    <div class='progress-bar' classList={{negative: is_negative() }}><div ref={$bar} class='bar'></div></div>
   </>)
 }
 function ease_springOut(t: number) {
@@ -414,18 +417,26 @@ function WelcomeFitnessScore() {
 
   const handle = createMemo(() => state.search_handle!)
 
+  const [on_configure_open, set_on_configure_open] = createSignal(false)
+
   return (<>
     <div class='welcome-fitness'>
       <div class='welcome-info'>
         <div class='welcome'>Hi, <A href={`https://lichess.org/@/${handle().handle}`} target='_blank'>{handle().username}</A></div>
         <div class='last-checked'>Recent games should appear shortly</div>
       </div>
+      <div class='configure'>
+        <div onClick={() => set_on_configure_open(!on_configure_open())} class='button'>Configure Fitness Formula parameters..</div>
+        <Show when={on_configure_open()}>
+          <ConfigureParameters params={state.overall_params}/>
+        </Show>
+      </div>
       <div class='fitness stats'>
         <div class='stat background-container'>
           <OpacityBlurShow when={handle().is_fetching_recent_games}/>
           <div class='title'>Today's Fitness Score</div>
-          <div class='value percent'>{format_fitness_score(handle().fitness_score.fitness_score * 100)}</div>
-          <ProgressBar percent={handle().fitness_score.fitness_score * 100} />
+          <div class='value percent'>{format_fitness_score(handle().fitness_score_with_recent_matches.fitness_score)}</div>
+          <ProgressBar percent={handle().fitness_score_with_recent_matches.fitness_score * 100} />
         </div>
         <div class='stat nb-played background-container'>
           <OpacityBlurShow when={handle().is_fetching_recent_games}/>
@@ -433,24 +444,161 @@ function WelcomeFitnessScore() {
           <div class='times'>
             <div class='time'>
               <div class='sub'>Bullet</div>
-              <div class='value percent'>{format_zero(handle().nb_bullet, 2)}</div>
+              <div class='value percent'>{format_zero(handle().fitness_score_with_recent_matches.Nb.length, 2)}</div>
             </div>
             <div class='time'>
               <div class='sub'>Blitz</div>
-              <div class='value percent'>{format_zero(handle().nb_blitz, 2)}</div>
+              <div class='value percent'>{format_zero(handle().fitness_score_with_recent_matches.Nz.length, 2)}</div>
             </div>
             <div class='time'>
               <div class='sub'>Rapid</div>
-              <div class='value percent'>{format_zero(handle().nb_rapid)}</div>
+              <div class='value percent'>{format_zero(handle().fitness_score_with_recent_matches.Nr.length)}</div>
             </div>
             <div class='time'>
               <div class='sub'>Classical</div>
-              <div class='value percent'>{format_zero(handle().nb_classical)}</div>
+              <div class='value percent'>{format_zero(handle().fitness_score_with_recent_matches.Nc.length)}</div>
             </div>
           </div>
-          <ProgressBar percent={handle().fitness_score.nb_played_score * 100} />
+          <ProgressBar percent={handle().fitness_score_with_recent_matches.T_total_score * 100} />
         </div>
       </div>
+    </div>
+  </>)
+}
+
+function ConfigureParameters(props: { params: Overall_Params }) {
+
+  const [, { dashboard_actions: { set_overall_params } }] = useState()
+
+  const on_T_changed = 
+    (param_a: AllowedSpeed) => 
+      (value: number) => set_overall_params(param_a, 'T_ratio', value)
+
+
+  return (<>
+    <div class='configure-parameters-form'>
+      <div class='classical'>
+        <ConfigureParametersForTimeControl name="classical" params={props.params.Pc} />
+      </div>
+      <div class='rapid'>
+        <ConfigureParametersForTimeControl name="rapid" params={props.params.Pr}  />
+      </div>
+      <div class='bullet'>
+        <ConfigureParametersForTimeControl name="bullet" params={props.params.Pb} />
+      </div>
+      <div class='blitz'>
+        <ConfigureParametersForTimeControl name="blitz" params={props.params.Pz}  />
+      </div>
+
+      <div class='general'>
+        <div class='title'> Overall Parameters</div>
+
+        <small>How much each time control contributes to the overall score</small>
+        <div class='input-group2'>
+        <div>
+          <label for='T_bullet'>Bullet Factor</label>
+          <Slider name={`T_bullet`} step={0.1} min={0} max={1} value={props.params.Tb} on_value_changed={on_T_changed('bullet')} />
+        </div>
+
+        <div>
+          <label for='T_bullet'>Blitz Factor</label>
+          <Slider name={`T_blitz`} step={0.1} min={0} max={1} value={props.params.Tz} on_value_changed={on_T_changed('blitz')} />
+        </div>
+        <div>
+          <label for='T_bullet'>Rapid Factor</label>
+          <Slider name={`T_rapid`} step={0.1} min={0} max={1} value={props.params.Tr} on_value_changed={on_T_changed('rapid')} />
+        </div>
+        <div>
+          <label for='T_bullet'>Classical Factor</label>
+          <Slider name={`T_classical`} step={0.1} min={0} max={1} value={props.params.Tc} on_value_changed={on_T_changed('classical')} />
+        </div>
+        </div>
+      </div>
+    </div>
+  </>)
+}
+
+function ConfigureParametersForTimeControl(props: { name: AllowedSpeed, params: TT_Params}) {
+
+  const [,{ dashboard_actions: { set_overall_params }}] = useState()
+
+  const on_g_target_changed = (value: number) => {
+    set_overall_params(props.name, 'g_target', value)
+  }
+  const on_alpha_changed = (value: number) => {
+    set_overall_params(props.name, 'alpha', value)
+  }
+  const on_gamma_you_changed = (value: number) => {
+    set_overall_params(props.name, 'gamma', value)
+  }
+  const on_lambda_opp_changed = (value: number) => {
+    set_overall_params(props.name, 'lambda', value)
+  }
+
+  return (<>
+    <div class='title'> {props.name} Parameters</div>
+
+
+    <div class='input-group'>
+      <div class='labels'>
+        <label for={`G_target_${props.name}`}>Target number of games</label>
+      </div>
+
+      <Slider name={`G_target_${props.name}`} min={0} max={50} value={props.params.Gtarget} on_value_changed={on_g_target_changed}/>
+    </div>
+
+
+    <div class='input-group'>
+      <div class='labels'>
+        <label for={`alpha_${props.name}`}>Quality Alpha</label>
+        <small>(Mixing between quantity vs quality)</small>
+      </div>
+      <Slider name={`alpha_${props.name}`} step={0.2} min={0} max={1} value={props.params.alpha} on_value_changed={on_alpha_changed}/>
+    </div>
+
+
+
+    <div class='input-group'>
+      <div class='labels'>
+        <label for={`you_gamma_${props.name}`}>Your divergence Gamma</label>
+        <small>(Less forgiving, more strict)</small>
+      </div>
+      <Slider name={`you_gamma_${props.name}`} step={0.2} min={-1} max={2} value={props.params.cc.Gamma_you} on_value_changed={on_gamma_you_changed}/>
+    </div>
+
+    <div class='input-group'>
+      <div class='labels'>
+        <label for={`opp_lambda_${props.name}`}>Opponent's divergence Lambda</label>
+        <small>(Less strict, more forgiving)</small>
+      </div>
+      <Slider name={`opp_lambda_${props.name}`} step={0.2} min={0} max={1} value={props.params.cc.Lambda_opp} on_value_changed={on_lambda_opp_changed}/>
+    </div>
+
+  </>)
+}
+
+function Slider(props: { name: string, step?: number, min: number, max: number, value: number, on_value_changed: (_: number) => void }) {
+
+  const [G_target, set_G_target] = createSignal(props.value)
+
+  const G_target_with_padding = createMemo(() => pad_float(G_target(), props.max < 2))
+
+  onMount(() => {
+    createEffect(() => {
+      $input.value = `${props.value}`
+    })
+  })
+
+  let $input!: HTMLInputElement
+
+  return (<>
+    <div class='slider'>
+      <span class='value'>{G_target_with_padding()}</span>
+      <input ref={$input} step={props.step??1} min={props.min} max={props.max} id={`G_target_${props.name}`} type='range' value={G_target()} onInput={_ => {
+        let value = parseFloat((_.target as HTMLInputElement).value)
+        set_G_target(value)
+        props.on_value_changed(value)
+      }} />
     </div>
   </>)
 }
@@ -588,7 +736,7 @@ function RecentMatches() {
 
   return (<>
   <div class='matches-list'>
-    <For each={state.search_handle?.recent_matches} fallback={
+    <For each={state.search_handle?.fitness_score_with_recent_matches.NAll} fallback={
       <div class='no-match no-content'>
           <div class='circle'></div>
           No Recent Matches played
@@ -597,19 +745,19 @@ function RecentMatches() {
           </p>
         </div>
     }>{ item => 
-      <div onClick={() => on_click_match(item)} class='match'>
+      <div onClick={() => on_click_match(item.match)} class='match'>
         <div class='board'>
         </div>
         <div class='info'>
             <div class='situation'>
-              <div class='type'><span class='speed'>{item.speed}</span> · {item.is_rated?'Rated':'Unrated'}</div>
-              <div class='time'>{MomentsAgo(item.game_created_at)}</div>
+              <div class='type'><span class='speed'>{item.match.speed}</span> · {item.match.is_rated?'Rated':'Unrated'}</div>
+              <div class='time'>{MomentsAgo(item.match.game_created_at)}</div>
             </div>
             <div class='vs'>
-                <A href={`https://lichess.org/${item.lichess_game_id}`}>
-                  <span class='players'>  {item.white} vs {item.black}</span>
+                <A href={`https://lichess.org/${item.match.lichess_game_id}`}>
+                  <span class='players'>  {item.match.white} vs {item.match.black}</span>
                 </A>
-              <Show when={item.opening.diverge} fallback={
+              <Show when={item.match.opening.diverge} fallback={
                 <>
                 </>
               }>{ diverge =>
@@ -620,20 +768,24 @@ function RecentMatches() {
                   <span class='move'>{ply_to_dots(diverge().diverge_ply)}{diverge().diverge_move}</span>
                 </div>
               }</Show>
-                <div class='outcome'>{item.did_you_draw ? `You drew!` : item.did_you_win ? 'You won!' : 'You lost!'}</div>
+                <div class='outcome'>{item.match.did_you_draw ? `You drew!` : item.match.did_you_win ? 'You won!' : 'You lost!'}</div>
 
+                <div class='fitness-bar'>
+                  Fitness Score: {format_fitness_score(item.Fitness_Score??0)} 
+                  <ProgressBar percent={(item.Fitness_Score ?? 0) * 100}/>
+                </div>
               </div>
               <div class='opening-and-controls'>
                 <div class='opening'>
-                  <Show when={item.opening.diverge} fallback={
+                  <Show when={item.match.opening.diverge} fallback={
                     <div class='nomatch'>No opening matched :[</div>
                   }>{diverge =>
                     <div class='name'>{diverge().most_matched_opening.list.name} · <span class='variation'>{diverge().most_matched_opening.name}</span></div>
                     }</Show>
-                  <OpeningLineLittleView moves={item.opening.moves} />
+                  <OpeningLineLittleView moves={item.match.opening.moves} />
                 </div>
 
-                <button onClick={e => { e.stopPropagation(); on_add_to_repertoire(item)}} class='primary'>+ Add to repertoire</button>
+                <button onClick={e => { e.stopPropagation(); on_add_to_repertoire(item.match)}} class='primary'>+ Add to repertoire</button>
               </div>
             </div>
       </div>
@@ -684,6 +836,7 @@ export function ply_to_display(ply: number) {
 }
 
 export function format_fitness_score(value: number) {
+  value *= 100
   return value ? `${value.toFixed(2)}%` : '--.--'
 }
 
@@ -728,4 +881,8 @@ export function formatMomentsAgo(now: number, timestamp: number): string {
 
 const ply_to_dots = (ply: number) => {
   return (ply % 2 === 0) ? `${Math.ceil((ply + 1) / 2)}.` : `${Math.ceil((ply + 1) / 2)}...`
+}
+
+const pad_float = (value: number, pad: boolean) => {
+  return pad ? value.toFixed(1) : value
 }

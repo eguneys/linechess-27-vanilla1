@@ -2,7 +2,7 @@ import type { Color } from "chessops"
 import { parse_mainline_from_pgn } from "./chess_parser"
 import { make_database, type DatabaseActions } from "./idb"
 import { gen_id, type LichessSearchHandle, type OpeningDiverge, type OpeningLineId, type OpeningList, type OpeningListId, type SingleLineMove } from "./types"
-import { calculate_fitness_score } from "./fitness"
+import { Default_O_params, FitnessFromRecentMatches } from "./fitness2"
 
 export type LightOpeningListModel = OpeningList
 
@@ -164,13 +164,7 @@ export async function make_idb_model(): Promise<Idb_Store> {
             let res: LichessSearchHandle = {
                 username,
                 handle: username.toLowerCase(),
-                fitness_score: calculate_fitness_score([]),
-                nb_played_score: 0,
-                nb_bullet: 0,
-                nb_blitz: 0,
-                nb_rapid: 0,
-                nb_classical: 0,
-                recent_matches: [],
+                fitness_score_with_recent_matches: FitnessFromRecentMatches([], Default_O_params),
                 is_fetching_recent_games: true,
                 last_checked: 0
             }

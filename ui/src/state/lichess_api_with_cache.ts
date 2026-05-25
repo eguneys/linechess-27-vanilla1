@@ -1,10 +1,11 @@
 import type { AccessorWithLatest } from "@solidjs/router"
 import type { Idb_Store } from "./idb_model"
-import { is_allowed_speed, type AllowedSpeed, type LichessSearchHandle, type OpeningInfo, type RecentMatch } from "./types"
+import { is_allowed_speed, type LichessSearchHandle, type OpeningInfo, type RecentMatch } from "./types"
 import { create_lichess_agent, type exportGameResponse } from "./lichess_agent"
 import { createStore, produce, unwrap } from "solid-js/store"
 import type { Color } from "chessops"
-import { calculate_fitness_score } from "./fitness"
+import { Default_O_params, FitnessFromRecentMatches, type Overall_Params } from "./fitness2"
+import type { Accessor } from "solid-js"
 
 export type LichessApiState = {
 }
@@ -12,13 +13,14 @@ export type LichessApiState = {
 export type LichessApiActions = {
     set_search_handle(handle: string): Promise<LichessSearchHandle | undefined>
     check_games_now(): void
+    reconfigure_params(): Promise<void>
 }
 
 export type LichessApiStore = [LichessApiState, LichessApiActions]
 
-export function make_lichess_api_with_cache(get_db: AccessorWithLatest<Idb_Store | undefined>): LichessApiStore {
+export function make_lichess_api_with_cache(get_db: AccessorWithLatest<Idb_Store | undefined>, get_o_params: Accessor<Overall_Params>): LichessApiStore {
 
-    const [, $set_lichess_cache] = make_lichess_cache_agent(get_db)
+    const [, $set_lichess_cache] = make_lichess_cache_agent(get_db, get_o_params)
 
     let check_games = () => $set_lichess_cache.read_stream_games_to_fill_handle()
 
@@ -39,6 +41,9 @@ export function make_lichess_api_with_cache(get_db: AccessorWithLatest<Idb_Store
         },
         check_games_now() {
             step()
+        },
+        async reconfigure_params() {
+            await $set_lichess_cache.reconfigure_params()
         }
     }
 
@@ -50,20 +55,30 @@ export type LichessCacheAgentState = {}
 export type LichessCacheAgentActions = {
     begin_fill_handle_by_username(username: string): Promise<LichessSearchHandle | undefined>
     read_stream_games_to_fill_handle(): Promise<void>
+    reconfigure_params(): Promise<void>
 }
 
 export type LichessCacheAgentStore = [LichessCacheAgentState, LichessCacheAgentActions]
 
-function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefined>): LichessCacheAgentStore {
+function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefined>, get_o_params: Accessor<Overall_Params>): LichessCacheAgentStore {
 
     let $agent = create_lichess_agent()
 
     const [pc_state, pc_actions] = make_lichess_search_handle_computer()
 
+    async function reconfigure_params(db: Idb_Store) {
+        let o_params = get_o_params()
+
+        await pc_actions.add_recent_games(db, [], o_params)
+    }
+
     let batched_games: RecentMatch[]
     let cancel_running_stream: () => void = () => {}
 
     async function read_from_stream_fetching_recent_games(db: Idb_Store, username: string, since: number) {
+
+        let o_params = get_o_params()
+
         cancel_running_stream()
         batched_games = []
 
@@ -84,7 +99,7 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
                     batched_games.length > 0 &&
                     now - lastFlush >= 3_00
                 ) {
-                    await pc_actions.add_recent_games(db, batched_games)
+                    await pc_actions.add_recent_games(db, batched_games, o_params)
                     batched_games = []
                     lastFlush = now
                 }
@@ -92,7 +107,7 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
 
             // flush remaining
             if (batched_games.length > 0) {
-                await pc_actions.add_recent_games(db, batched_games)
+                await pc_actions.add_recent_games(db, batched_games, o_params)
                 batched_games = []
             }
         } catch (error) {
@@ -105,12 +120,24 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
     }
 
     let actions = {
+        async reconfigure_params() {
+            let db = get_db()
+
+            if (!db) {
+                return undefined
+            }
+
+            await reconfigure_params(db)
+
+        },
         async begin_fill_handle_by_username(username: string) {
             let db = get_db()
 
             if (!db) {
                 return undefined
             }
+
+            username = await $agent.fetch_username(username)
 
             let since = YesterdayMs()
 
@@ -133,7 +160,21 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
                 return
             }
 
-            let since = pc_state.lichess_search_handle?.recent_matches[0]?.game_last_move_at ?? YesterdayMs()
+            let most_recent_game = undefined
+            let fitness_score = pc_state.lichess_search_handle?.fitness_score_with_recent_matches
+
+            if (fitness_score) {
+                let { Nb, Nz, Nr, Nc } = fitness_score
+                for (let game of [...Nb, ...Nz, ...Nr, ...Nc]) {
+                    if (!most_recent_game) {
+                        most_recent_game = game
+                    } else if (most_recent_game.match.game_last_move_at < game.match.game_last_move_at) {
+                        most_recent_game = game
+                    }
+                }
+            }
+
+            let since = most_recent_game?.match.game_last_move_at ?? YesterdayMs()
 
             await read_from_stream_fetching_recent_games(db, username, since + 1)
         }
@@ -143,48 +184,23 @@ function make_lichess_cache_agent(get_db: AccessorWithLatest<Idb_Store | undefin
 }
 
 
-export async function add_recent_games(_db: Idb_Store, handle: LichessSearchHandle, games_to_add: RecentMatch[]): Promise<LichessSearchHandle> {
+export async function add_recent_games(_db: Idb_Store, handle: LichessSearchHandle, games_to_add: RecentMatch[], o_params: Overall_Params): Promise<LichessSearchHandle> {
 
-    games_to_add = games_to_add.filter(b => !handle.recent_matches.some(a => a.lichess_game_id === b.lichess_game_id))
+    games_to_add = games_to_add.filter(b => !handle.fitness_score_with_recent_matches.NAll.some(a => a.match.lichess_game_id === b.lichess_game_id))
 
-
-    const add_nb_played_score = (_nb_played_score: number, _games_to_add: RecentMatch[]) => {
-        return 0
-    }
-    const add_nb_speed = (nb_bullet: number, games_to_add: RecentMatch[], speed: AllowedSpeed) => {
-        return nb_bullet + games_to_add.filter(_ => _.speed === speed).length
-    }
-
-
-    let nb_played_score = handle.nb_played_score
-    let nb_blitz = handle.nb_blitz
-    let nb_bullet = handle.nb_bullet
-    let nb_rapid = handle.nb_rapid
-    let nb_classical = handle.nb_classical
     let username = handle.username
-    let recent_matches = handle.recent_matches
+    let recent_matches = handle.fitness_score_with_recent_matches.NAll.map(_ => _.match)
 
-    let new_nb_played_score = add_nb_played_score(nb_played_score, games_to_add)
-    let new_nb_bullet = add_nb_speed(nb_bullet, games_to_add, 'bullet')
-    let new_nb_blitz = add_nb_speed(nb_blitz, games_to_add, 'blitz')
-    let new_nb_rapid = add_nb_speed(nb_rapid, games_to_add, 'rapid')
-    let new_nb_classical = add_nb_speed(nb_classical, games_to_add, 'classical')
     let new_recent_matches = [...recent_matches, ...games_to_add]
 
     new_recent_matches.sort((a, b) => b.game_created_at - a.game_created_at)
 
-    let new_fitness_score = calculate_fitness_score(new_recent_matches)
+    let new_fitness_score_with_recent_matches = FitnessFromRecentMatches(new_recent_matches, o_params)
 
     let res: LichessSearchHandle = {
         handle: username.toLowerCase(),
-        fitness_score: new_fitness_score,
-        nb_played_score: new_nb_played_score,
-        nb_bullet: new_nb_bullet,
-        nb_blitz: new_nb_blitz,
-        nb_rapid: new_nb_rapid,
-        nb_classical: new_nb_classical,
         username,
-        recent_matches: new_recent_matches,
+        fitness_score_with_recent_matches: new_fitness_score_with_recent_matches,
         is_fetching_recent_games: true,
         last_checked: Date.now()
     }
@@ -265,7 +281,7 @@ export type LichessSearchHandleState = {
 }
 export type LichessSearchHandleActions = {
     set_search_handle(search_handle?: LichessSearchHandle): void
-    add_recent_games(db: Idb_Store, games: RecentMatch[]): Promise<void>
+    add_recent_games(db: Idb_Store, games: RecentMatch[], o_params: Overall_Params): Promise<void>
     finish_games(db: Idb_Store, ): void
 }
 
@@ -276,13 +292,7 @@ export function make_lichess_search_handle_computer(): LichessSearchHandleComput
     let [store, set_store] = createStore<LichessSearchHandle>({
         username: '',
         handle: '',
-        fitness_score: calculate_fitness_score([]),
-        nb_played_score: 0,
-        nb_bullet: 0,
-        nb_blitz: 0,
-        nb_rapid: 0,
-        nb_classical: 0,
-        recent_matches: [],
+        fitness_score_with_recent_matches: FitnessFromRecentMatches([], Default_O_params),
         is_fetching_recent_games: false,
         last_checked: Date.now()
     })
@@ -297,17 +307,11 @@ export function make_lichess_search_handle_computer(): LichessSearchHandleComput
             set_store('is_fetching_recent_games', false)
             db[1].set_recent_search_handle(unwrap(store))
         },
-        async add_recent_games(db: Idb_Store, games: RecentMatch[]) {
-            let new_store = await add_recent_games(db, unwrap(store), games)
+        async add_recent_games(db: Idb_Store, games: RecentMatch[], o_params: Overall_Params) {
+            let new_store = await add_recent_games(db, unwrap(store), games, o_params)
 
             set_store(produce(store => {
-                store.fitness_score = new_store.fitness_score
-                store.nb_played_score = new_store.nb_played_score
-                store.nb_blitz = new_store.nb_blitz
-                store.nb_bullet = new_store.nb_bullet
-                store.nb_rapid = new_store.nb_rapid
-                store.nb_classical = new_store.nb_classical
-                store.recent_matches = new_store.recent_matches
+                store.fitness_score_with_recent_matches = new_store.fitness_score_with_recent_matches
                 store.last_checked = Date.now()
             }))
 
@@ -322,13 +326,7 @@ export function make_lichess_search_handle_computer(): LichessSearchHandleComput
             set_store(produce(store => {
                 store.username = new_store.username
                 store.handle = new_store.handle
-                store.fitness_score = new_store.fitness_score
-                store.nb_played_score = new_store.nb_played_score
-                store.nb_blitz = new_store.nb_blitz
-                store.nb_bullet = new_store.nb_bullet
-                store.nb_rapid = new_store.nb_rapid
-                store.nb_classical = new_store.nb_classical
-                store.recent_matches = new_store.recent_matches
+                store.fitness_score_with_recent_matches = new_store.fitness_score_with_recent_matches
                 store.is_fetching_recent_games = new_store.is_fetching_recent_games
                 store.last_checked = Date.now()
             }))
