@@ -6,7 +6,7 @@ import './Main.scss'
 import type { OpeningListModel } from "../state/idb_model"
 import type { AllowedSpeed, OpeningDiverge, RecentMatch, SingleLineMove } from "../state/types"
 import type { DashboardTab } from "../state/linechess_state"
-import type { Overall_Params, TT_Params } from "../state/fitness2"
+import type { Overall_Params, PerGameLineFitness, TT_Params } from "../state/fitness2"
 
 
 export function DashboardPage() {
@@ -713,8 +713,9 @@ function RecentMatches() {
   }
 
 
-  const on_add_to_repertoire = (match: RecentMatch) => {
+  const on_add_to_repertoire = (item: PerGameLineFitness) => {
 
+    let match = item.match
     let moves = match.opening.moves
 
     let diverge = match.opening.diverge
@@ -725,9 +726,10 @@ function RecentMatches() {
       linechess_actions.select_opening_list(list_id)
       linechess_actions.select_opening_line(line_id)
 
+      moves = match.opening.moves.slice(0, diverge.diverge_ply + 2)
     }
 
-    linechess_actions.set_open_add_new_line(true, moves.slice(0, 40).map((san, i) => {
+    linechess_actions.set_open_add_new_line(true, moves.slice(0, 30).map((san, i) => {
       let ply = i % 2 === 0 ? `${Math.ceil((i + 1) / 2)}. ` : ''
       return `${ply}${san}`
     }).join(' '))
@@ -786,7 +788,7 @@ function RecentMatches() {
                   <OpeningLineLittleView moves={item.match.opening.moves} />
                 </div>
 
-                <button onClick={e => { e.stopPropagation(); on_add_to_repertoire(item.match)}} class='primary'>+ Add to repertoire</button>
+                <button onClick={e => { e.stopPropagation(); on_add_to_repertoire(item)}} class='primary'>+ Add to repertoire</button>
               </div>
             </div>
       </div>
