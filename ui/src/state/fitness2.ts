@@ -145,8 +145,7 @@ function Fitness(dd: PerGameLineFitness[], params: Overall_Params): FitnessScore
         params.Tr * F_t(Tr, params.Pr) +
         params.Tc * F_t(Tc, params.Pc)
 
-    let T_total = Tb.length + Tz.length + Tr.length + Tc.length
-
+    let T_total = params.Tb + params.Tz + params.Tr + params.Tc
 
     let Fitness = T_total === 0 ? 0 : T_sums / T_total
 
@@ -183,10 +182,17 @@ function get_divergence_model_for_match(match: RecentMatch): DivergenceModel | u
         return undefined
     }
 
-    let Pmax = match.opening.moves.length
+    let Pmax = match.opening.diverge.most_matched_opening.moves.length
 
-    let Py = match.opening.diverge.did_you_diverge ? match.opening.diverge.diverge_at_ply : undefined
-    let Po = !match.opening.diverge.did_you_diverge ? match.opening.diverge.diverge_at_ply : undefined
+    let Py = match.opening.diverge.did_you_diverge ? (match.opening.diverge.diverge_at_ply + 1) : undefined
+    let Po = !match.opening.diverge.did_you_diverge ? (match.opening.diverge.diverge_at_ply + 1) : undefined
+
+    if (Py === Pmax) {
+        Py = undefined
+    }
+    if (Po === Pmax) {
+        Po = undefined
+    }
 
     let res: DivergenceModel = {
         best_matching_opening_line: match.opening.diverge.most_matched_opening,
